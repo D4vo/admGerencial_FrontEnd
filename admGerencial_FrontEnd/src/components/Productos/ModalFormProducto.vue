@@ -64,16 +64,23 @@ watch(() => props.visible, (estaVisible) => {
   if (estaVisible) {
     if (props.productoOriginal) {
       form.value = { ...props.productoOriginal }
+      // Aseguramos de pre-seleccionar la primera categoría si el producto viejo no tenía ninguna
       if (!form.value.tipo && props.categorias.length > 0) {
         form.value.tipo = props.categorias[0].nombre
       }
     } else {
+      // Limpiamos el formulario para un producto nuevo
       form.value = { id: null, nombre: '', tipo: props.categorias.length > 0 ? props.categorias[0].nombre : '', precio: null, stock: 0 }
     }
   }
 })
+
+// VALIDACIÓN CORREGIDA: Apunta a "tipo" y valida que "nombre" exista
 const formularioValido = computed(() => {
-  return form.value.nombre.trim() !== '' && form.value.categoria_nombre !== '' && form.value.precio > 0
+  return form.value.nombre && 
+         form.value.nombre.trim() !== '' && 
+         form.value.tipo !== '' && 
+         form.value.precio > 0
 })
 
 const guardar = () => emit('guardar', { ...form.value })

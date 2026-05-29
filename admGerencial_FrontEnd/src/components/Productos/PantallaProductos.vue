@@ -1,100 +1,3 @@
-<script setup>
-// ==========================================
-// 1. IMPORTS
-// ==========================================
-import { ref, computed, onMounted } from 'vue';
-import { productosService } from '../../services/productosService'; // Tu servicio real
-
-// Componentes Hijos
-import TablaProductos from './TablaProductos.vue';
-import ModalFormProducto from './ModalFormProducto.vue';
-import ModalExito from '../ModalesGenericos/ModalExito.vue';
-
-// ==========================================
-// 2. ESTADO
-// ==========================================
-const productosInventario = ref([]);
-const cargando = ref(true);
-const errorCarga = ref(null);
-
-// Estados de modales
-const mostrarModalForm = ref(false);
-const mostrarExito = ref(false);
-const tituloExito = ref('');
-const productoSeleccionado = ref(null); // Si es null, es un producto nuevo
-
-// Categorías estáticas (tal como pediste)
-const categoriasEstaticas = ref([
-  { nombre: 'Bebidas' },
-  { nombre: 'Snacks' },
-  { nombre: 'Golosinas' },
-  { nombre: 'Limpieza' }
-]);
-
-// ==========================================
-// 3. INICIALIZACIÓN (LLAMADAS A LA API)
-// ==========================================
-
-const cargarDatos = async () => {
-  
-    const categoriasEstaticas = ref([
-    { nombre: 'Bebidas' },
-    { nombre: 'Snacks' },
-    { nombre: 'Golosinas' },
-    { nombre: 'Limpieza' }
-    ]);
-
-    try {
-    cargando.value = true;
-    errorCarga.value = null;
-    productosInventario.value = await productosService.obtenerTodos();
-  } catch (err) {
-    console.error('Error al cargar productos:', err);
-    errorCarga.value = 'No se pudieron cargar los productos.';
-  } finally {
-    cargando.value = false;
-  }
-};
-onMounted(cargarDatos);
-
-// ==========================================
-// 4. MÉTODOS DE GESTIÓN (POST/PUT)
-// ==========================================
-const abrirModalNuevo = () => {
-  productoSeleccionado.value = null;
-  mostrarModalForm.value = true;
-};
-
-const abrirModalEditar = (producto) => {
-  productoSeleccionado.value = { ...producto };
-  mostrarModalForm.value = true;
-};
-
-const guardarProducto = async (datos) => {
-  try {
-    // Aquí es donde usas el servicio que ya tienes preparado
-    if (datos.id) {
-      //await productosService.actualizar(datos.id, datos);
-      console.log("📦 ESTRUCTURA JSON A ENVIAR (editar):", JSON.stringify(datos, null, 2));
-      tituloExito.value = "¡Producto Actualizado!";
-    } else {
-      await productosService.crear(datos);
-      console.log("📦 ESTRUCTURA JSON A ENVIAR(nuevo):", JSON.stringify(datos, null, 2));
-      tituloExito.value = "¡Producto Creado!";
-    }
-    
-    // Éxito: cerramos modal, recargamos y mostramos confirmación
-    mostrarModalForm.value = false;
-    await cargarProductos();
-    mostrarExito.value = true;
-    
-  } catch (err) {
-    console.error('Error al guardar producto:', err);
-    alert('Hubo un error al guardar los cambios.');
-  }
-};
-</script>
-
 <template>
   <div class="modulo-productos">
     <header class="cabecera-modulo">
@@ -128,6 +31,87 @@ const guardarProducto = async (datos) => {
     />
   </div>
 </template>
+
+<script setup>
+import { ref, onMounted } from 'vue';
+import { productosService } from '../../services/productosService'; 
+
+// Componentes Hijos
+import TablaProductos from './TablaProductos.vue';
+import ModalFormProducto from './ModalFormProducto.vue';
+import ModalExito from '../ModalesGenericos/ModalExito.vue';
+
+// Estado
+const productosInventario = ref([]);
+const cargando = ref(true);
+const errorCarga = ref(null);
+
+// Estados de modales
+const mostrarModalForm = ref(false);
+const mostrarExito = ref(false);
+const tituloExito = ref('');
+const productoSeleccionado = ref(null);
+
+// Categorías estáticas
+const categoriasEstaticas = ref([
+  { nombre: 'Bebidas' },
+  { nombre: 'Snacks' },
+  { nombre: 'Golosinas' },
+  { nombre: 'Limpieza' }
+]);
+
+// Llamada a la API
+const cargarDatos = async () => {
+  try {
+    cargando.value = true;
+    errorCarga.value = null;
+    productosInventario.value = await productosService.obtenerTodos();
+  } catch (err) {
+    console.error('Error al cargar productos:', err);
+    errorCarga.value = 'No se pudieron cargar los productos.';
+  } finally {
+    cargando.value = false;
+  }
+};
+
+onMounted(cargarDatos);
+
+// Métodos de gestión
+const abrirModalNuevo = () => {
+  productoSeleccionado.value = null;
+  mostrarModalForm.value = true;
+};
+
+const abrirModalEditar = (producto) => {
+  productoSeleccionado.value = { ...producto };
+  mostrarModalForm.value = true;
+};
+
+const guardarProducto = async (datos) => {
+  try {
+    if (datos.id) {
+      // Si tiene ID, es una edición. Descomentá esta línea cuando tu compañero haga el PUT en la API
+      // await productosService.actualizar(datos.id, datos);
+      console.log("📦 JSON A ENVIAR (editar):", JSON.stringify(datos, null, 2));
+      tituloExito.value = "¡Producto Actualizado!";
+    } else {
+      // Si no tiene ID, es nuevo
+      await productosService.crear(datos);
+      console.log("📦 JSON A ENVIAR (nuevo):", JSON.stringify(datos, null, 2));
+      tituloExito.value = "¡Producto Creado!";
+    }
+    
+    // Éxito: cerramos modal, recargamos la tabla con el nombre de función correcto y mostramos éxito
+    mostrarModalForm.value = false;
+    await cargarDatos(); 
+    mostrarExito.value = true;
+    
+  } catch (err) {
+    console.error('Error al guardar producto:', err);
+    alert('Hubo un error al guardar los cambios en el servidor.');
+  }
+};
+</script>
 
 <style scoped>
 .modulo-productos { padding: 20px; }

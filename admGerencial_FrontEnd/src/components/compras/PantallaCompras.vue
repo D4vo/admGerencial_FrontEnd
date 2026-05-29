@@ -7,13 +7,13 @@
 
     <div class="layout-grid">
       <div class="col-principal">
-        <FormularioItemCompra @agregar-item="onAgregarItem" />
+        <FormularioItemCompra :productos="productosInventario" @agregar-item="onAgregarItem" />
         <TablaDetalleCompra :detalles="detallesCompra" @eliminar-item="onEliminarItem" />
       </div>
 
       <div class="col-lateral">
         <PanelResumenCompra
-            ref="panelRef"
+          ref="panelRef"
           :total="totalCompra" 
           :cargando="cargando"
           @confirmar-compra="enviarAlBackend" 
@@ -22,11 +22,7 @@
     </div>
 
     <ModalExito 
-      v-if="mostrarModal" 
-      :visible="true"
-      :mostrar="true"
-      :show="true"
-      :isOpen="true"
+      :show="mostrarModal" 
       titulo="¡Compra Registrada!"
       mensaje="El stock y los libros contables han sido actualizados."
       @close="cerrarModalYLimpiar"
@@ -35,16 +31,31 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { productosService } from '../../services/productosService'
 import FormularioItemCompra from './FormularioItemCompra.vue'
 import TablaDetalleCompra from './TablaDetalleCompra.vue'
 import PanelResumenCompra from './PanelResumenCompra.vue'
 import ModalExito from '../ModalesGenericos/ModalExito.vue'
 
+// Estados
+const productosInventario = ref([])
+const errorCarga = ref(null)
 const detallesCompra = ref([])
 const cargando = ref(false)
 const mostrarModal = ref(false) 
 const panelRef = ref(null)
+
+// Llamada centralizada a la API
+onMounted(async () => {
+  try {
+    const data = await productosService.obtenerTodos()
+    productosInventario.value = data
+  } catch (err) {
+    console.error('Error obteniendo productos:', err)
+    errorCarga.value = 'Error al cargar catálogo.'
+  }
+})
 
 const totalCompra = computed(() => {
   return detallesCompra.value.reduce((acc, item) => acc + (item.cantidad * item.costo_unitario), 0)
@@ -69,10 +80,9 @@ const enviarAlBackend = async (datosCabecera) => {
   try {
     console.log("Enviando JSON al backend:", JSON.stringify(payload, null, 2))
     
-    // Simulación de la API
+    // Simulación de la API (acá irá tu post al backend)
     await new Promise(resolve => setTimeout(resolve, 1500)) 
     
-    // Mostramos el modal
     mostrarModal.value = true
   } catch (error) {
     console.error("Error en la API:", error)
@@ -83,9 +93,8 @@ const enviarAlBackend = async (datosCabecera) => {
 
 const cerrarModalYLimpiar = () => {
   mostrarModal.value = false
-  detallesCompra.value = [] // Esto ya lo tenías, limpia la tabla
+  detallesCompra.value = []
   
-  // Esto es lo nuevo: manda a limpiar el panel lateral
   if (panelRef.value) {
     panelRef.value.resetearFormulario()
   }

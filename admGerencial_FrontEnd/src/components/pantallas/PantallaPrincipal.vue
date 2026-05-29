@@ -4,14 +4,14 @@ import BarraDeNavegacion from '../layout/BarraDeNavegacion.vue';
 import PantallaVentas from '../ventas/PantallaVentas.vue';
 import PantallaCompras from '../compras/PantallaCompras.vue';
 import PantallaProductos from '../Productos/PantallaProductos.vue';
-
+import PantallaPlanCuentas from '../Cuentas/PantallaPlanCuentas.vue';
 // Mapeamos los nombres de los botones con sus componentes reales.
 // A medida que crees más pantallas, las importás y las agregás acá.
 const mapaPantallas = {
   'Ventas': PantallaVentas,
   'Compras': PantallaCompras,
   'Productos': PantallaProductos,
-  
+  'Cuentas': PantallaPlanCuentas,
   // 'Libro Diario': PantallaLibroDiario,
   // 'Balance': PantallaBalance
 };

@@ -5,7 +5,7 @@
         <label>Producto</label>
         <select v-model="item.producto_id">
           <option disabled value="">Seleccionar producto...</option>
-          <option v-for="p in productosMock" :key="p.id" :value="p.id">
+          <option v-for="p in productos" :key="p.id" :value="p.id">
             {{ p.nombre }}
           </option>
         </select>
@@ -31,24 +31,16 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
-import { productosService } from '../../services/productosService';
-const emit = defineEmits(['agregar-item'])
+import { ref, computed } from 'vue'
 
-const productosMock = ref([])
-
-onMounted(async () => {
-  try {
-    // Llamada al backend a través de la capa de servicios
-    const data = await productosService.obtenerTodos();
-    productosMock.value = data;
-    
-  } catch (err) {
-    console.error('Error obteniendo productos:', err);
-    errorCarga.value = 'No se pudieron cargar los productos. Verifique la conexión con el servidor.';
-  } finally {
+const props = defineProps({
+  productos: {
+    type: Array,
+    required: true
   }
-});
+})
+
+const emit = defineEmits(['agregar-item'])
 
 const item = ref({ producto_id: '', cantidad: null, costo_unitario: null })
 

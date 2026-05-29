@@ -3,7 +3,7 @@ import { ref } from 'vue';
 
 const emit = defineEmits(['navegar']);
 
-const botones = ['Ventas', 'Compras', 'Productos', 'Balance'];
+const botones = ['Ventas', 'Compras', 'Productos', 'Cuentas'];
 const botonActivo = ref('Ventas');
 
 const emitirNavegacion = (boton) => {
