@@ -8,7 +8,10 @@
       <button class="btn-nuevo" @click="abrirModalNuevo">+ Nueva Cuenta</button>
     </header>
 
-    <div class="layout-contenido">
+    <div v-if="cargando" class="estado-mensaje">Cargando plan de cuentas...</div>
+    <div v-else-if="errorCarga" class="estado-mensaje error">{{ errorCarga }}</div>
+
+    <div v-else class="layout-contenido">
       <ListaCuentasAgrupadas :grupos="cuentasAgrupadas" @editar="abrirModalEditar" />
     </div>
 
@@ -29,31 +32,48 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import ListaCuentasAgrupadas from './ListaCuentasAgrupadas.vue';
 import ModalFormCuenta from './ModalFormCuenta.vue';
 import ModalExito from '../ModalesGenericos/ModalExito.vue';
+import { cuentasService } from '../../services/cuentasService'; // Importamos el nuevo servicio
 
-// Simulación de registros de la base de datos
-const cuentasDB = ref([
-  { id: 1, codigo: '1.01.00', nombre: 'Caja', tipo: 'Activo' },
-  { id: 2, codigo: '1.01.01', nombre: 'Banco Nación C/C', tipo: 'Activo' },
-  { id: 3, codigo: '1.02.00', nombre: 'Mercaderías', tipo: 'Activo' },
-  { id: 4, codigo: '2.01.00', nombre: 'Proveedores', tipo: 'Pasivo' },
-  { id: 5, codigo: '2.02.00', nombre: 'Sueldos a Pagar', tipo: 'Pasivo' },
-  { id: 6, codigo: '3.01.00', nombre: 'Capital Social', tipo: 'Patrimonio Neto' },
-  { id: 7, codigo: '3.02.00', nombre: 'Resultados Acumulados', tipo: 'Patrimonio Neto' },
-  { id: 8, codigo: '4.01.00', nombre: 'Ventas', tipo: 'Ingreso' },
-  { id: 9, codigo: '5.01.00', nombre: 'Costo de Mercadería Vendida', tipo: 'Egreso' },
-  { id: 10, codigo: '5.02.00', nombre: 'Gastos Generales', tipo: 'Egreso' }
-]);
+// ==========================================
+// ESTADO REACTIVO
+// ==========================================
+const cuentasDB = ref([]); // Arranca vacío, se llena desde la API
+const cargando = ref(true);
+const errorCarga = ref(null);
 
 const mostrarModalForm = ref(false);
 const mostrarExito = ref(false);
 const tituloExito = ref('');
 const cuentaSeleccionada = ref(null);
 
-// Computada para agrupar y ordenar por código de manera automática
+// ==========================================
+// INICIALIZACIÓN (LLAMADA A LA API)
+// ==========================================
+const cargarCuentas = async () => {
+  try {
+    cargando.value = true;
+    errorCarga.value = null;
+    
+    const data = await cuentasService.obtenerTodas();
+    cuentasDB.value = data;
+    
+  } catch (err) {
+    console.error('Error al cargar las cuentas contables:', err);
+    errorCarga.value = 'No se pudo cargar el plan de cuentas. Verifique la conexión con el servidor.';
+  } finally {
+    cargando.value = false;
+  }
+};
+
+onMounted(cargarCuentas);
+
+// ==========================================
+// LÓGICA COMPUTADA (AGRUPACIÓN Y ORDEN)
+// ==========================================
 const cuentasAgrupadas = computed(() => {
   const ordenTipos = ['Activo', 'Pasivo', 'Patrimonio Neto', 'Ingreso', 'Egreso'];
   return ordenTipos.map(tipo => {
@@ -68,6 +88,9 @@ const cuentasAgrupadas = computed(() => {
   });
 });
 
+// ==========================================
+// MÉTODOS DE GESTIÓN
+// ==========================================
 const abrirModalNuevo = () => {
   cuentaSeleccionada.value = null;
   mostrarModalForm.value = true;
@@ -81,30 +104,40 @@ const abrirModalEditar = (cuenta) => {
 const guardarCuenta = async (datos) => {
   try {
     if (datos.id) {
-      // Simulación de actualización (PUT)
-      console.log("📂 ESTRUCTURA JSON A ENVIAR (editar cuenta):", JSON.stringify(datos, null, 2));
+      // 1. Armamos la estructura limpia para la actualización
+      const payloadEditarCuenta = {
+        codigo: datos.codigo,
+        nombre: datos.nombre,
+        tipo: datos.tipo
+      };
+
+      // 2. LLAMADO REAL A LA API DE EDICIÓN
+      await cuentasService.actualizar(datos.id, payloadEditarCuenta);
       
-      const idx = cuentasDB.value.findIndex(c => c.id === datos.id);
-      if (idx !== -1) {
-        cuentasDB.value[idx] = datos;
-      }
+      console.log("📂 CAMBIOS GUARDADOS EN BD PARA LA CUENTA ID:", datos.id, JSON.stringify(payloadEditarCuenta, null, 2));
       tituloExito.value = "¡Cuenta Actualizada!";
+      
     } else {
-      // Simulación de creación (POST)
-      const nuevoId = cuentasDB.value.length ? Math.max(...cuentasDB.value.map(c => c.id)) + 1 : 1;
-      const nuevaCuenta = { id: nuevoId, ...datos };
-      
-      console.log("📂 ESTRUCTURA JSON A ENVIAR (nueva cuenta):", JSON.stringify(datos, null, 2));
-      
-      cuentasDB.value.push(nuevaCuenta);
+      // Inserción de cuenta nueva
+      const payloadNuevaCuenta = {
+        codigo: datos.codigo,
+        nombre: datos.nombre,
+        tipo: datos.tipo
+      };
+
+      await cuentasService.crear(payloadNuevaCuenta);
+      console.log("📂 CUENTA CREADA EN BD:", JSON.stringify(payloadNuevaCuenta, null, 2));
       tituloExito.value = "¡Cuenta Creada!";
     }
     
+    // Si la operación es exitosa (sea creación o edición), refrescamos la interfaz
     mostrarModalForm.value = false;
+    await cargarCuentas(); // Trae la lista actualizada del servidor automáticamente
     mostrarExito.value = true;
+    
   } catch (err) {
     console.error('Error al guardar la cuenta:', err);
-    alert('Hubo un error al procesar la operación.');
+    alert('Hubo un error al guardar los cambios en el servidor.');
   }
 };
 </script>
@@ -156,5 +189,16 @@ const guardarCuenta = async (datos) => {
   display: flex;
   flex-direction: column;
   gap: 20px;
+}
+
+.estado-mensaje {
+  text-align: center;
+  padding: 40px;
+  color: #6b7280;
+  font-size: 0.95rem;
+}
+
+.error {
+  color: #ef4444;
 }
 </style>

@@ -5,7 +5,7 @@
       <button class="btn-nuevo" @click="abrirModalNuevo">+ Nuevo Producto</button>
     </header>
 
-    <div v-if="cargando" class="estado-mensaje">Cargando catálogo...</div>
+    <div v-if="cargando" class="estado-mensaje">Cargando catálogo y categorías...</div>
     <div v-else-if="errorCarga" class="estado-mensaje error">{{ errorCarga }}</div>
     
     <TablaProductos 
@@ -16,7 +16,7 @@
 
     <ModalFormProducto 
       :visible="mostrarModalForm"
-      :categorias="categoriasEstaticas"
+      :categorias="categoriasLista"
       :productoOriginal="productoSeleccionado"
       @cerrar="mostrarModalForm = false"
       @guardar="guardarProducto"
@@ -35,40 +35,47 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { productosService } from '../../services/productosService'; 
+import { categoriasService } from '../../services/categoriasService';
 
 // Componentes Hijos
 import TablaProductos from './TablaProductos.vue';
 import ModalFormProducto from './ModalFormProducto.vue';
 import ModalExito from '../ModalesGenericos/ModalExito.vue';
 
-// Estado
+// ==========================================
+// ESTADO REACTIVO
+// ==========================================
 const productosInventario = ref([]);
+const categoriasLista = ref([]); // Arranca como array vacío
 const cargando = ref(true);
 const errorCarga = ref(null);
 
-// Estados de modales
 const mostrarModalForm = ref(false);
 const mostrarExito = ref(false);
 const tituloExito = ref('');
 const productoSeleccionado = ref(null);
 
-// Categorías estáticas
-const categoriasEstaticas = ref([
-  { nombre: 'Bebidas' },
-  { nombre: 'Snacks' },
-  { nombre: 'Golosinas' },
-  { nombre: 'Limpieza' }
-]);
-
-// Llamada a la API
+// ==========================================
+// INICIALIZACIÓN (LLAMADAS A LA API)
+// ==========================================
 const cargarDatos = async () => {
   try {
     cargando.value = true;
     errorCarga.value = null;
-    productosInventario.value = await productosService.obtenerTodos();
+    
+    // Ejecutamos ambas peticiones en paralelo
+    const [productosData, categoriasData] = await Promise.all([
+      productosService.obtenerTodos(),
+      categoriasService.obtenerTodas()
+    ]);
+
+    // Asignación segura garantizando que siempre sean arrays
+    productosInventario.value = Array.isArray(productosData) ? productosData : (productosData?.data || []);
+    categoriasLista.value = Array.isArray(categoriasData) ? categoriasData : (categoriasData?.data || []);
+
   } catch (err) {
-    console.error('Error al cargar productos:', err);
-    errorCarga.value = 'No se pudieron cargar los productos.';
+    console.error('Error al cargar datos:', err);
+    errorCarga.value = 'No se pudieron cargar los datos. Verifique la conexión con el servidor.';
   } finally {
     cargando.value = false;
   }
@@ -76,7 +83,9 @@ const cargarDatos = async () => {
 
 onMounted(cargarDatos);
 
-// Métodos de gestión
+// ==========================================
+// MÉTODOS DE GESTIÓN
+// ==========================================
 const abrirModalNuevo = () => {
   productoSeleccionado.value = null;
   mostrarModalForm.value = true;
@@ -90,18 +99,35 @@ const abrirModalEditar = (producto) => {
 const guardarProducto = async (datos) => {
   try {
     if (datos.id) {
-      // Si tiene ID, es una edición. Descomentá esta línea cuando tu compañero haga el PUT en la API
-      // await productosService.actualizar(datos.id, datos);
-      console.log("📦 JSON A ENVIAR (editar):", JSON.stringify(datos, null, 2));
+      // 1. Armamos la estructura limpia para la actualización
+      const payloadEditar = {
+        nombre: datos.nombre,
+        precio: datos.precio,
+        stock: datos.stock,
+        tipo: datos.tipo
+      };
+
+      // 2. LLAMADO REAL A LA API DE EDICIÓN
+      await productosService.actualizar(datos.id, payloadEditar);
+      
+      console.log("📦 CAMBIOS GUARDADOS EN BD PARA EL ID:", datos.id, JSON.stringify(payloadEditar, null, 2));
       tituloExito.value = "¡Producto Actualizado!";
+      
     } else {
-      // Si no tiene ID, es nuevo
-      await productosService.crear(datos);
-      console.log("📦 JSON A ENVIAR (nuevo):", JSON.stringify(datos, null, 2));
+      // Inserción de producto nuevo
+      const payloadNuevo = {
+        nombre: datos.nombre,
+        precio: datos.precio,
+        stock: datos.stock,
+        tipo: datos.tipo
+      };
+
+      await productosService.crear(payloadNuevo);
+      console.log("📦 PRODUCTO NUEVO GUARDADO EN BD:", JSON.stringify(payloadNuevo, null, 2));
       tituloExito.value = "¡Producto Creado!";
     }
     
-    // Éxito: cerramos modal, recargamos la tabla con el nombre de función correcto y mostramos éxito
+    // Si la operación es exitosa (sea creación o edición), refrescamos la interfaz
     mostrarModalForm.value = false;
     await cargarDatos(); 
     mostrarExito.value = true;
@@ -120,4 +146,5 @@ const guardarProducto = async (datos) => {
 .btn-nuevo { background: #10b981; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; }
 .btn-nuevo:hover { background: #059669; }
 .estado-mensaje { text-align: center; padding: 40px; color: #6b7280; }
+.error { color: #ef4444; }
 </style>

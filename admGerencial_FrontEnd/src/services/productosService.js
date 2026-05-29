@@ -1,11 +1,27 @@
 import { apiFetch } from './api';
 
 export const productosService = {
-  // Función para traer el listado
+  // 1. Listar todos los productos
   obtenerTodos: async () => {
-    // Si tu compañero usó el formato {"status": "success", "data": [...]}, 
-    // devolvemos solo el array "data" para que el componente trabaje cómodo.
-    const respuesta = await apiFetch('/v1/productos/');
-    return respuesta.data; 
+    const respuesta = await apiFetch('/productos/');
+    return Array.isArray(respuesta) ? respuesta : (respuesta.data || []);
+  },
+
+  // 2. Crear un producto nuevo (POST)
+  crear: async (nuevoProducto) => {
+    const respuesta = await apiFetch('/productos/', {
+      method: 'POST',
+      body: JSON.stringify(nuevoProducto)
+    });
+    return respuesta;
+  },
+
+  // 3. NUEVO: Actualizar un producto existente (PUT)
+  actualizar: async (id, productoActualizado) => {
+    const respuesta = await apiFetch(`/productos/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(productoActualizado)
+    });
+    return respuesta;
   }
 };
