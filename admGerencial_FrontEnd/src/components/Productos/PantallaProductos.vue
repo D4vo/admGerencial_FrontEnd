@@ -46,7 +46,7 @@ import ModalExito from '../ModalesGenericos/ModalExito.vue';
 // ESTADO REACTIVO
 // ==========================================
 const productosInventario = ref([]);
-const categoriasLista = ref([]); // Arranca como array vacío
+const categoriasLista = ref([]); 
 const cargando = ref(true);
 const errorCarga = ref(null);
 
@@ -63,13 +63,12 @@ const cargarDatos = async () => {
     cargando.value = true;
     errorCarga.value = null;
     
-    // Ejecutamos ambas peticiones en paralelo
     const [productosData, categoriasData] = await Promise.all([
       productosService.obtenerTodos(),
       categoriasService.obtenerTodas()
     ]);
 
-    // Asignación segura garantizando que siempre sean arrays
+    // CORRECCIÓN APLICADA: NavData reemplazado por categoriasData
     productosInventario.value = Array.isArray(productosData) ? productosData : (productosData?.data || []);
     categoriasLista.value = Array.isArray(categoriasData) ? categoriasData : (categoriasData?.data || []);
 
@@ -99,9 +98,10 @@ const abrirModalEditar = (producto) => {
 const guardarProducto = async (datos) => {
   try {
     if (datos.id) {
-      // 1. Armamos la estructura limpia para la actualización
+      // 1. Armamos la estructura limpia para la actualización incluyendo el costo
       const payloadEditar = {
         nombre: datos.nombre,
+        costo: datos.costo,
         precio: datos.precio,
         stock: datos.stock,
         tipo: datos.tipo
@@ -114,9 +114,10 @@ const guardarProducto = async (datos) => {
       tituloExito.value = "¡Producto Actualizado!";
       
     } else {
-      // Inserción de producto nuevo
+      // Inserción de producto nuevo incluyendo el costo
       const payloadNuevo = {
         nombre: datos.nombre,
+        costo: datos.costo,
         precio: datos.precio,
         stock: datos.stock,
         tipo: datos.tipo
@@ -127,7 +128,6 @@ const guardarProducto = async (datos) => {
       tituloExito.value = "¡Producto Creado!";
     }
     
-    // Si la operación es exitosa (sea creación o edición), refrescamos la interfaz
     mostrarModalForm.value = false;
     await cargarDatos(); 
     mostrarExito.value = true;
