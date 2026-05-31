@@ -69,10 +69,12 @@ const enviarAlBackend = async (datosCabecera) => {
 
   cargando.value = true
 
+  // Se añade metodo_pago capturado del componente hijo
   const payload = {
     fecha: new Date().toISOString().split('T')[0],
     tipo_comprobante: datosCabecera.tipo_comprobante,
     nro_comprobante: datosCabecera.nro_comprobante,
+    metodo_pago: datosCabecera.metodo_pago,
     total: totalCompra.value,
     detalles: detallesCompra.value
   }

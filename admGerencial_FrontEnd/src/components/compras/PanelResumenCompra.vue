@@ -13,6 +13,7 @@
           <option value="Ticket">Ticket</option>
         </select>
       </div>
+      
       <div class="grupo">
         <label>Nº de Comprobante *</label>
         <input 
@@ -22,6 +23,14 @@
           :class="{'error-borde': errorValidacion}"
         />
         <span v-if="errorValidacion" class="msj-error">Obligatorio para guardar</span>
+      </div>
+
+      <div class="grupo">
+        <label>Método de Pago</label>
+        <select v-model="cabecera.metodo_pago">
+          <option value="Efectivo">Efectivo (Cuenta Caja)</option>
+          <option value="Transferencia">Transferencia (Cuenta Banco)</option>
+        </select>
       </div>
     </div>
 
@@ -52,7 +61,11 @@ const props = defineProps({
 
 const emit = defineEmits(['confirmar-compra'])
 
-const cabecera = ref({ tipo_comprobante: 'Factura A', nro_comprobante: '' })
+const cabecera = ref({ 
+  tipo_comprobante: 'Factura A', 
+  nro_comprobante: '', 
+  metodo_pago: 'Efectivo' 
+})
 const errorValidacion = ref(false)
 
 const emitirConfirmacion = () => {
@@ -65,7 +78,11 @@ const emitirConfirmacion = () => {
 }
 
 const resetearFormulario = () => {
-  cabecera.value = { tipo_comprobante: 'Factura A', nro_comprobante: '' }
+  cabecera.value = { 
+    tipo_comprobante: 'Factura A', 
+    nro_comprobante: '', 
+    metodo_pago: 'Efectivo' 
+  }
   errorValidacion.value = false
 }
 
@@ -104,7 +121,7 @@ input:focus, select:focus { border-color: #10b981; background-color: #ffffff; bo
 .btn-confirmar { 
   width: 100%; 
   padding: 0.85rem; 
-  background: #10b981; /* Verde característico */
+  background: #10b981; 
   color: white; 
   border: none; 
   border-radius: 8px; 
