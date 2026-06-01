@@ -33,6 +33,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { productosService } from '../../services/productosService'
+import { comprasService } from '../../services/comprasService' // Importamos el servicio de compras
 import FormularioItemCompra from './FormularioItemCompra.vue'
 import TablaDetalleCompra from './TablaDetalleCompra.vue'
 import PanelResumenCompra from './PanelResumenCompra.vue'
@@ -46,11 +47,12 @@ const cargando = ref(false)
 const mostrarModal = ref(false) 
 const panelRef = ref(null)
 
-// Llamada centralizada a la API
+// Llamada centralizada a la API para cargar el select de productos
 onMounted(async () => {
   try {
     const data = await productosService.obtenerTodos()
-    productosInventario.value = data
+    // Validación de seguridad para asegurarse de recibir un array
+    productosInventario.value = Array.isArray(data) ? data : (data?.data || [])
   } catch (err) {
     console.error('Error obteniendo productos:', err)
     errorCarga.value = 'Error al cargar catálogo.'
@@ -69,25 +71,33 @@ const enviarAlBackend = async (datosCabecera) => {
 
   cargando.value = true
 
-  // Se añade metodo_pago capturado del componente hijo
+  // 1. Limpiamos los detalles para mandar SOLO lo que la API pide
+  const detallesFormateados = detallesCompra.value.map(item => ({
+    producto_id: item.producto_id, // Asegurate de que el formulario emita 'producto_id'
+    cantidad: item.cantidad,
+    costo_unitario: item.costo_unitario
+  }))
+
+  // 2. Armamos la estructura cabecera + detalle
   const payload = {
     fecha: new Date().toISOString().split('T')[0],
     tipo_comprobante: datosCabecera.tipo_comprobante,
     nro_comprobante: datosCabecera.nro_comprobante,
     metodo_pago: datosCabecera.metodo_pago,
     total: totalCompra.value,
-    detalles: detallesCompra.value
+    detalles: detallesFormateados
   }
  
   try {
-    console.log("Enviando JSON al backend:", JSON.stringify(payload, null, 2))
+    console.log("📦 ENVIANDO COMPRA AL BACKEND:", JSON.stringify(payload, null, 2))
     
-    // Simulación de la API (acá irá tu post al backend)
-    await new Promise(resolve => setTimeout(resolve, 1500)) 
+    // 3. Llamado real a la API
+    await comprasService.crear(payload)
     
     mostrarModal.value = true
   } catch (error) {
-    console.error("Error en la API:", error)
+    console.error("Error en la API de compras:", error)
+    alert('Hubo un error al registrar la compra en el servidor.')
   } finally {
     cargando.value = false
   }

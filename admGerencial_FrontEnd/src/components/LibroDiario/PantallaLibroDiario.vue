@@ -25,37 +25,8 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
+import { contabilidadService } from '../../services/contabilidadService'; // Importamos el servicio
 import TablaLibroDiario from './TablaLibroDiario.vue';
-
-// ==========================================
-// ESTADO ESTÁTICO (Simulación de API)
-// ==========================================
-const asientosSimulados = [
-  {
-    "nro_asiento": 1,
-    "fecha": "2026-05-30T10:15:00",
-    "descripcion": "Venta Mostrador - Efectivo",
-    "detalles": [
-      { "cuenta_codigo": "1.1.1.01", "cuenta_nombre": "Caja", "debe": 12000.00, "haber": 0.00 },
-      { "cuenta_codigo": "5.1.01", "cuenta_nombre": "Costo de Mercaderías Vendidas", "debe": 5500.00, "haber": 0.00 },
-      { "cuenta_codigo": "4.1.01", "cuenta_nombre": "Ventas", "debe": 0.00, "haber": 12000.00 },
-      { "cuenta_codigo": "1.1.5.01", "cuenta_nombre": "Mercaderías", "debe": 0.00, "haber": 5500.00 }
-    ],
-    "total_debe": 17500.00,
-    "total_haber": 17500.00
-  },
-  {
-    "nro_asiento": 2,
-    "fecha": "2026-05-31T09:30:00",
-    "descripcion": "Compra s/ Factura A 0444",
-    "detalles": [
-      { "cuenta_codigo": "1.1.5.01", "cuenta_nombre": "Mercaderías", "debe": 45000.00, "haber": 0.00 },
-      { "cuenta_codigo": "1.1.1.02", "cuenta_nombre": "Banco c/c", "debe": 0.00, "haber": 45000.00 }
-    ],
-    "total_debe": 45000.00,
-    "total_haber": 45000.00
-  }
-];
 
 // ==========================================
 // ESTADO REACTIVO
@@ -72,15 +43,15 @@ const cargarLibroDiario = async () => {
     cargando.value = true;
     errorCarga.value = null;
     
-    // Simulamos un delay de red de 800ms para mantener el feedback visual
-    await new Promise(resolve => setTimeout(resolve, 800));
+    // Llamado real a la API
+    const data = await contabilidadService.obtenerLibroDiario();
     
-    // Inyectamos el array estático
-    listaAsientos.value = asientosSimulados;
+    // Asignación segura del array
+    listaAsientos.value = Array.isArray(data) ? data : (data?.data || []);
 
   } catch (err) {
     console.error('Error al cargar el Libro Diario:', err);
-    errorCarga.value = 'No se pudieron cargar los registros contables.';
+    errorCarga.value = 'No se pudieron cargar los registros contables. Verifique la conexión con el servidor.';
   } finally {
     cargando.value = false;
   }
