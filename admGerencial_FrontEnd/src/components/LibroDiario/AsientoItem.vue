@@ -36,16 +36,15 @@ defineProps({
   }
 });
 
-const formatearFecha = (fechaIso) => {
-  if (!fechaIso) return '';
-  const fecha = new Date(fechaIso);
-  return fecha.toLocaleDateString('es-AR', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
+const formatearFecha = (fechaString) => {
+  if (!fechaString) return '';
+  
+  // Extraemos la fecha cortando cualquier posible "T" de tiempo 
+  // y luego dividimos por los guiones para rearmarlo en formato DD/MM/YYYY
+  const fechaSolo = fechaString.split('T')[0];
+  const [year, month, day] = fechaSolo.split('-');
+  
+  return `${day}/${month}/${year}`;
 };
 </script>
 
