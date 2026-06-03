@@ -16,6 +16,7 @@
           ref="panelRef"
           :total="totalCompra" 
           :cargando="cargando"
+          :proveedores="cuentasProveedores"
           @confirmar-compra="enviarAlBackend" 
         />
       </div>
@@ -33,7 +34,8 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { productosService } from '../../services/productosService'
-import { comprasService } from '../../services/comprasService' // Importamos el servicio de compras
+import { cuentasService } from '../../services/cuentasService'
+import { comprasService } from '../../services/comprasService'
 import FormularioItemCompra from './FormularioItemCompra.vue'
 import TablaDetalleCompra from './TablaDetalleCompra.vue'
 import PanelResumenCompra from './PanelResumenCompra.vue'
@@ -41,21 +43,35 @@ import ModalExito from '../ModalesGenericos/ModalExito.vue'
 
 // Estados
 const productosInventario = ref([])
+const cuentasProveedores = ref([]) // Nuevo estado para los proveedores
 const errorCarga = ref(null)
 const detallesCompra = ref([])
 const cargando = ref(false)
 const mostrarModal = ref(false) 
 const panelRef = ref(null)
 
-// Llamada centralizada a la API para cargar el select de productos
+// Llamada centralizada a la API para cargar productos y cuentas
 onMounted(async () => {
   try {
-    const data = await productosService.obtenerTodos()
-    // Validación de seguridad para asegurarse de recibir un array
-    productosInventario.value = Array.isArray(data) ? data : (data?.data || [])
+    // Traemos ambos catálogos en paralelo
+    const [productosData, cuentasData] = await Promise.all([
+      productosService.obtenerTodos(),
+      cuentasService.obtenerTodas()
+    ])
+
+    // Asignación segura
+    productosInventario.value = Array.isArray(productosData) ? productosData : (productosData?.data || [])
+    
+    const todasLasCuentas = Array.isArray(cuentasData) ? cuentasData : (cuentasData?.data || [])
+    
+    // Filtramos para quedarnos solo con cuentas del pasivo que representen proveedores
+    cuentasProveedores.value = todasLasCuentas.filter(cuenta => 
+      cuenta.tipo === 'Pasivo' && cuenta.nombre.toLowerCase().includes('proveedor')
+    )
+
   } catch (err) {
-    console.error('Error obteniendo productos:', err)
-    errorCarga.value = 'Error al cargar catálogo.'
+    console.error('Error obteniendo datos iniciales:', err)
+    errorCarga.value = 'Error al cargar catálogos.'
   }
 })
 
@@ -71,27 +87,33 @@ const enviarAlBackend = async (datosCabecera) => {
 
   cargando.value = true
 
-  // 1. Limpiamos los detalles para mandar SOLO lo que la API pide
+  // 1. Limpiamos los detalles
   const detallesFormateados = detallesCompra.value.map(item => ({
-    producto_id: item.producto_id, // Asegurate de que el formulario emita 'producto_id'
+    producto_id: item.producto_id,
     cantidad: item.cantidad,
     costo_unitario: item.costo_unitario
   }))
 
-  // 2. Armamos la estructura cabecera + detalle
+  // 2. Base del payload
   const payload = {
     fecha: new Date().toISOString().split('T')[0],
     tipo_comprobante: datosCabecera.tipo_comprobante,
-    nro_comprobante: datosCabecera.nro_comprobante,
-    metodo_pago: datosCabecera.metodo_pago,
     total: totalCompra.value,
     detalles: detallesFormateados
+  }
+
+  // 3. Condicional para la estructura del JSON
+  if (datosCabecera.tipo_comprobante === 'Cuenta Corriente') {
+    payload.cuenta_proveedor_id = datosCabecera.cuenta_proveedor_id
+  } else {
+    payload.nro_comprobante = datosCabecera.nro_comprobante
+    payload.metodo_pago = datosCabecera.metodo_pago
   }
  
   try {
     console.log("📦 ENVIANDO COMPRA AL BACKEND:", JSON.stringify(payload, null, 2))
     
-    // 3. Llamado real a la API
+    // Llamado real a la API
     await comprasService.crear(payload)
     
     mostrarModal.value = true
@@ -130,7 +152,6 @@ const cerrarModalYLimpiar = () => {
   align-items: start; 
 }
 
-/* Si la pantalla es chica, se apilan */
 @media (max-width: 900px) {
   .layout-grid { grid-template-columns: 1fr; }
 }

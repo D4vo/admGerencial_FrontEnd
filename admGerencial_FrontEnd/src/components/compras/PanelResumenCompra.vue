@@ -5,33 +5,49 @@
     <div class="form-documento">
       <div class="grupo">
         <label>Tipo de Comprobante</label>
-        <select v-model="cabecera.tipo_comprobante">
+        <select v-model="cabecera.tipo_comprobante" @change="limpiarCampos">
           <option value="Factura A">Factura A</option>
           <option value="Factura B">Factura B</option>
-          <option value="Factura C">Factura C</option>
-          <option value="Remito">Remito</option>
-          <option value="Ticket">Ticket</option>
+          <option value="Cuenta Corriente">Cuenta Corriente</option>
         </select>
       </div>
       
-      <div class="grupo">
-        <label>Nº de Comprobante *</label>
-        <input 
-          type="text" 
-          v-model="cabecera.nro_comprobante" 
-          placeholder="Ej: 0001-00001234" 
-          :class="{'error-borde': errorValidacion}"
-        />
-        <span v-if="errorValidacion" class="msj-error">Obligatorio para guardar</span>
-      </div>
+      <template v-if="cabecera.tipo_comprobante !== 'Cuenta Corriente'">
+        <div class="grupo">
+          <label>Nº de Comprobante *</label>
+          <input 
+            type="text" 
+            v-model="cabecera.nro_comprobante" 
+            placeholder="Ej: 0001-00001234" 
+            :class="{'error-borde': errorValidacion}"
+          />
+          <span v-if="errorValidacion" class="msj-error">Obligatorio para guardar</span>
+        </div>
 
-      <div class="grupo">
-        <label>Método de Pago</label>
-        <select v-model="cabecera.metodo_pago">
-          <option value="Efectivo">Efectivo (Cuenta Caja)</option>
-          <option value="Transferencia">Transferencia (Cuenta Banco)</option>
-        </select>
-      </div>
+        <div class="grupo">
+          <label>Método de Pago</label>
+          <select v-model="cabecera.metodo_pago">
+            <option value="Efectivo">Efectivo (Cuenta Caja)</option>
+            <option value="Transferencia">Transferencia (Cuenta Banco)</option>
+          </select>
+        </div>
+      </template>
+
+      <template v-else>
+        <div class="grupo">
+          <label>Cuenta de Proveedor *</label>
+          <select 
+            v-model="cabecera.cuenta_proveedor_id" 
+            :class="{'error-borde': errorValidacion}"
+          >
+            <option value="" disabled>Seleccione un proveedor...</option>
+            <option v-for="prov in proveedores" :key="prov.id" :value="prov.id">
+              {{ prov.nombre }}
+            </option>
+          </select>
+          <span v-if="errorValidacion" class="msj-error">Debe seleccionar un proveedor</span>
+        </div>
+      </template>
     </div>
 
     <hr class="divisor" />
@@ -56,7 +72,8 @@ import { ref } from 'vue'
 
 const props = defineProps({
   total: { type: Number, required: true },
-  cargando: { type: Boolean, default: false }
+  cargando: { type: Boolean, default: false },
+  proveedores: { type: Array, default: () => [] } // Prop recibida desde PantallaCompras
 })
 
 const emit = defineEmits(['confirmar-compra'])
@@ -64,15 +81,37 @@ const emit = defineEmits(['confirmar-compra'])
 const cabecera = ref({ 
   tipo_comprobante: 'Factura A', 
   nro_comprobante: '', 
-  metodo_pago: 'Efectivo' 
+  metodo_pago: 'Efectivo',
+  cuenta_proveedor_id: ''
 })
 const errorValidacion = ref(false)
 
-const emitirConfirmacion = () => {
-  if (!cabecera.value.nro_comprobante || cabecera.value.nro_comprobante.trim() === '') {
-    errorValidacion.value = true
-    return
+// Limpia los errores y los campos para evitar enviar datos residuales si cambia el comprobante
+const limpiarCampos = () => {
+  errorValidacion.value = false
+  if (cabecera.value.tipo_comprobante === 'Cuenta Corriente') {
+    cabecera.value.nro_comprobante = ''
+    cabecera.value.metodo_pago = ''
+  } else {
+    cabecera.value.cuenta_proveedor_id = ''
+    cabecera.value.metodo_pago = 'Efectivo'
   }
+}
+
+const emitirConfirmacion = () => {
+  // Validación condicional dependiendo de qué campos están activos
+  if (cabecera.value.tipo_comprobante === 'Cuenta Corriente') {
+    if (!cabecera.value.cuenta_proveedor_id) {
+      errorValidacion.value = true
+      return
+    }
+  } else {
+    if (!cabecera.value.nro_comprobante || cabecera.value.nro_comprobante.trim() === '') {
+      errorValidacion.value = true
+      return
+    }
+  }
+  
   errorValidacion.value = false
   emit('confirmar-compra', { ...cabecera.value })
 }
@@ -81,7 +120,8 @@ const resetearFormulario = () => {
   cabecera.value = { 
     tipo_comprobante: 'Factura A', 
     nro_comprobante: '', 
-    metodo_pago: 'Efectivo' 
+    metodo_pago: 'Efectivo',
+    cuenta_proveedor_id: ''
   }
   errorValidacion.value = false
 }
