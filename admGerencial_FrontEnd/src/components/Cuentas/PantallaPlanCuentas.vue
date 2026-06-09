@@ -8,6 +8,15 @@
       <button class="btn-nuevo" @click="abrirModalNuevo">+ Nueva Cuenta</button>
     </header>
 
+    <div class="barra-busqueda">
+      <input 
+        type="text" 
+        v-model="textoBusqueda" 
+        placeholder="Buscar por código, nombre o tipo (Ej: 1.1, Caja, Activo)..." 
+        class="input-buscador"
+      />
+    </div>
+
     <div v-if="cargando" class="estado-mensaje">Cargando plan de cuentas...</div>
     <div v-else-if="errorCarga" class="estado-mensaje error">{{ errorCarga }}</div>
 
@@ -36,14 +45,16 @@ import { ref, computed, onMounted } from 'vue';
 import ListaCuentasAgrupadas from './ListaCuentasAgrupadas.vue';
 import ModalFormCuenta from './ModalFormCuenta.vue';
 import ModalExito from '../ModalesGenericos/ModalExito.vue';
-import { cuentasService } from '../../services/cuentasService'; // Importamos el nuevo servicio
+import { cuentasService } from '../../services/cuentasService';
 
 // ==========================================
 // ESTADO REACTIVO
 // ==========================================
-const cuentasDB = ref([]); // Arranca vacío, se llena desde la API
+const cuentasDB = ref([]);
 const cargando = ref(true);
 const errorCarga = ref(null);
+
+const textoBusqueda = ref(''); // Estado del buscador
 
 const mostrarModalForm = ref(false);
 const mostrarExito = ref(false);
@@ -72,20 +83,33 @@ const cargarCuentas = async () => {
 onMounted(cargarCuentas);
 
 // ==========================================
-// LÓGICA COMPUTADA (AGRUPACIÓN Y ORDEN)
+// LÓGICA COMPUTADA (FILTRO, AGRUPACIÓN Y ORDEN)
 // ==========================================
 const cuentasAgrupadas = computed(() => {
+  const query = textoBusqueda.value.toLowerCase().trim();
   const ordenTipos = ['Activo', 'Pasivo', 'Patrimonio Neto', 'Ingreso', 'Egreso'];
+
+  // 1. Filtramos la base de datos completa primero según lo que se escriba
+  let baseFiltrada = cuentasDB.value;
+  if (query) {
+    baseFiltrada = baseFiltrada.filter(cuenta => 
+      (cuenta.codigo && cuenta.codigo.toLowerCase().includes(query)) ||
+      (cuenta.nombre && cuenta.nombre.toLowerCase().includes(query)) ||
+      (cuenta.tipo && cuenta.tipo.toLowerCase().includes(query))
+    );
+  }
+
+  // 2. Agrupamos y ordenamos lo que quedó del filtro
   return ordenTipos.map(tipo => {
-    const cuentasFiltradas = cuentasDB.value
+    const cuentasDelTipo = baseFiltrada
       .filter(cuenta => cuenta.tipo === tipo)
       .sort((a, b) => a.codigo.localeCompare(b.codigo));
 
     return {
       tipoContable: tipo,
-      cuentas: cuentasFiltradas
+      cuentas: cuentasDelTipo
     };
-  });
+  }).filter(grupo => grupo.cuentas.length > 0); // Ocultamos los grupos que quedaron vacíos tras la búsqueda
 });
 
 // ==========================================
@@ -104,21 +128,17 @@ const abrirModalEditar = (cuenta) => {
 const guardarCuenta = async (datos) => {
   try {
     if (datos.id) {
-      // 1. Armamos la estructura limpia para la actualización
       const payloadEditarCuenta = {
         codigo: datos.codigo,
         nombre: datos.nombre,
         tipo: datos.tipo
       };
 
-      // 2. LLAMADO REAL A LA API DE EDICIÓN
       await cuentasService.actualizar(datos.id, payloadEditarCuenta);
-      
       console.log("📂 CAMBIOS GUARDADOS EN BD PARA LA CUENTA ID:", datos.id, JSON.stringify(payloadEditarCuenta, null, 2));
       tituloExito.value = "¡Cuenta Actualizada!";
       
     } else {
-      // Inserción de cuenta nueva
       const payloadNuevaCuenta = {
         codigo: datos.codigo,
         nombre: datos.nombre,
@@ -130,9 +150,8 @@ const guardarCuenta = async (datos) => {
       tituloExito.value = "¡Cuenta Creada!";
     }
     
-    // Si la operación es exitosa (sea creación o edición), refrescamos la interfaz
     mostrarModalForm.value = false;
-    await cargarCuentas(); // Trae la lista actualizada del servidor automáticamente
+    await cargarCuentas(); 
     mostrarExito.value = true;
     
   } catch (err) {
@@ -183,6 +202,30 @@ const guardarCuenta = async (datos) => {
 
 .btn-nuevo:hover {
   background: #2563eb;
+}
+
+/* NUEVO: Estilos de la barra de búsqueda */
+.barra-busqueda {
+  margin-bottom: 25px;
+}
+
+.input-buscador {
+  width: 100%;
+  padding: 0.85rem 1.2rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  color: #1f2937;
+  background-color: #f9fafb;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.input-buscador:focus {
+  border-color: #3b82f6;
+  background-color: #ffffff;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 .layout-contenido {
