@@ -11,5 +11,13 @@ export const contabilidadService = {
   obtenerLibroMayor: async () => {
     const respuesta = await apiFetch('/contabilidad/libro-mayor/');
     return Array.isArray(respuesta) ? respuesta : (respuesta.data || []);
+  },
+  // 3. NUEVO: Registrar el inicio de actividades (POST)
+  registrarInicioActividades: async (datosInicio) => {
+    const respuesta = await apiFetch('/capital/', {
+      method: 'POST',
+      body: JSON.stringify(datosInicio)
+    });
+    return respuesta;
   }
 };
