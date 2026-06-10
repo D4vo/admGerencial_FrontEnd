@@ -35,30 +35,13 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
+import { proveedoresService } from '../../services/proveedoresService'; // <-- Servicio Corregido
 import TablaDeudasProveedores from './TablaDeudasProveedores.vue';
 import ModalPagoProveedor from './ModalPagoProveedor.vue';
 import ModalExito from '../ModalesGenericos/ModalExito.vue';
 
 // ==========================================
-// ESTADO ESTÁTICO (Estructura provista del Back)
-// ==========================================
-const deudasEstaticas = [
-  {
-    "cuenta_id": 48,
-    "cuenta_codigo": "211001",
-    "proveedor_cuenta": "Proveedores DonJose",
-    "saldo_pendiente": 25000.00
-  },
-  {
-    "cuenta_id": 49,
-    "cuenta_codigo": "211002",
-    "proveedor_cuenta": "Proveedores Gonzales",
-    "saldo_pendiente": 12000.00
-  }
-];
-
-// ==========================================
-// ESTADO REACTIVO
+// ESTADO REACTIVO REAL
 // ==========================================
 const listaDeudas = ref([]);
 const cargando = ref(true);
@@ -68,19 +51,27 @@ const mostrarModalPago = ref(false);
 const mostrarModalExito = ref(false);
 const deudaSeleccionada = ref(null);
 
-// Simulación de carga inicial
-onMounted(async () => {
+// ==========================================
+// LLAMADA EN VIVO A LA API (GET)
+// ==========================================
+const cargarDeudas = async () => {
   try {
     cargando.value = true;
-    await new Promise(resolve => setTimeout(resolve, 600)); // Feedback visual rápido
-    listaDeudas.value = deudasEstaticas;
+    errorCarga.value = null;
+    
+    const data = await proveedoresService.obtenerDeudas();
+    // Validación segura para garantizar la lectura del array
+    listaDeudas.value = Array.isArray(data) ? data : (data?.data || []);
+    
   } catch (err) {
-    console.error(err);
-    errorCarga.value = 'No se pudieron cargar los saldos.';
+    console.error('Error al cargar las deudas de proveedores:', err);
+    errorCarga.value = 'No se pudieron cargar los saldos de deudas. Verifique la conexión con el servidor.';
   } finally {
     cargando.value = false;
   }
-});
+};
+
+onMounted(cargarDeudas);
 
 const abrirModalPago = (deuda) => {
   deudaSeleccionada.value = deuda;
@@ -88,49 +79,34 @@ const abrirModalPago = (deuda) => {
 };
 
 // ==========================================
-// GESTIÓN DE LA API Y PAYLOADS
+// PROCESAMIENTO DEL COBRO (POST)
 // ==========================================
 const procesarPagoAPI = async (datosPagoForm) => {
-  // 1. Armamos el JSON estricto tal cual lo requiere el backend
+  // Armamos el JSON con el formato exacto requerido por el modelo del backend
   const payloadPago = {
-    fecha: new Date().toISOString(), // Genera el formato ISO Completo (Ej: "2026-06-06T15:30:00.000Z")
+    fecha: new Date().toISOString(), 
     cuenta_proveedor_id: deudaSeleccionada.value.cuenta_id,
     monto_pagado: datosPagoForm.monto_pagado,
     metodo_pago: datosPagoForm.metodo_pago,
     observaciones: datosPagoForm.observaciones || ""
   };
 
-  // 2. LOG EXIGIDO: Revisión visual en consola de la estructura exacta antes de enviar
-  console.log("🚀 ESTRUCTURA LISTA PARA ENVIAR AL BACKEND (POST /compras/pagos):", JSON.stringify(payloadPago, null, 2));
+  console.log("🚀 ENVIANDO ESTRUCTURA DE PAGO AL BACKEND:", JSON.stringify(payloadPago, null, 2));
 
   try {
-    // ======================================================================
-    // UBICACIÓN DE LA LLAMADA A LA API:
-    // Aquí debés descomentar e incluir tu llamado real mediante el servicio.
-    // Ejemplo:
-    // await comprasService.registrarPagoProveedor(payloadPago);
-    // ======================================================================
-    
-    // Simulación temporal de éxito
-    await new Promise(resolve => setTimeout(resolve, 500));
+    // Petición HTTP POST real hacia la base de datos usando el nuevo servicio
+    await proveedoresService.registrarPago(payloadPago);
 
-    // Descontamos localmente el saldo de la lista para ver el cambio inmediato en la grilla
-    const index = listaDeudas.value.findIndex(d => d.cuenta_id === payloadPago.cuenta_proveedor_id);
-    if (index !== -1) {
-      listaDeudas.value[index].saldo_pendiente -= payloadPago.monto_pagado;
-      // Si el saldo pendiente quedó en 0, podrías optar por removerlo de la lista
-      if (listaDeudas.value[index].saldo_pendiente <= 0) {
-        listaDeudas.value.splice(index, 1);
-      }
-    }
-
-    // Cerramos el formulario e indicamos éxito global
+    // Si la operación es exitosa en el servidor, cerramos el formulario flotante
     mostrarModalPago.value = false;
     mostrarModalExito.value = true;
 
+    // Volvemos a consultar la lista del servidor para refrescar los saldos actualizados automáticamente
+    await cargarDeudas();
+
   } catch (error) {
     console.error("Error al registrar el pago en el servidor:", error);
-    alert("Hubo un problema de conexión al asentar el pago.");
+    alert("Hubo un problema al procesar el pago en el servidor. Verifique los campos enviados.");
   }
 };
 </script>
