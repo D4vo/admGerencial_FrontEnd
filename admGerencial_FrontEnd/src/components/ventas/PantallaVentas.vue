@@ -165,24 +165,28 @@ const procesarVenta = async (datosVenta) => {
   try {
     console.log('📦 ENVIANDO VENTA AL BACKEND:', JSON.stringify(datosVenta, null, 2));
 
-    // Enviamos la estructura completa y exacta que generó el modal y espera la API
-    await ventasService.crear(datosVenta);
+    // 1. Guardamos la respuesta del backend al crear la venta
+    const respuestaBackend = await ventasService.crear(datosVenta);
     
-    // Si sale bien, cerramos el checkout y limpiamos el carrito para la próxima venta
+    // 2. Disparamos la descarga del PDF enviándole el ID generado
+    console.log(`📄 Descargando comprobante PDF para la venta ID: ${respuestaBackend.id}`);
+    await ventasService.descargarTicket(respuestaBackend.id);
+    
+    // Si sale todo bien, cerramos el checkout y limpiamos el carrito
     modalCheckoutOpen.value = false;
     carrito.value = [];
     
     // Refrescamos el catálogo para actualizar el stock en tiempo real
     await cargarDatos();
     
-    // Preparamos el mensaje de éxito
-    mensajeExito.value = `La venta por un total de $${datosVenta.total.toLocaleString('es-AR')} abonada con ${datosVenta.metodoPago} se ha registrado correctamente en el sistema.`;
+    // Preparamos el mensaje de éxito utilizando también el tipo de comprobante devuelto si se desea
+    mensajeExito.value = `La venta por un total de $${datosVenta.total.toLocaleString('es-AR')} abonada con ${datosVenta.metodoPago} se ha registrado correctamente y el comprobante se está descargando.`;
     
     modalExitoOpen.value = true;
 
   } catch (error) {
     console.error('Error al procesar la venta:', error);
-    alert('Hubo un error al registrar la venta en el servidor.');
+    alert('Hubo un error al registrar la venta o al generar el comprobante en el servidor.');
   }
 };
 </script>
