@@ -12,7 +12,8 @@ const menuItems = [
   { id: 'Libro Diario', label: 'Libro Diario', icon: '📓' },
   { id: 'Deudas Proveedores', label: 'Deudas a Prov.', icon: '💸' },
   { id: 'Libro Mayor', label: 'Libro Mayor', icon: '📘' },
-  { id: 'Inicio Actividades', label: 'Inicio Actividades', icon: '🚀' }
+  { id: 'Inicio Actividades', label: 'Inicio Actividades', icon: '🚀' },
+   { id: 'Documentos', label: 'Documentos', icon: '📓' }
 ];
 
 const botonActivo = ref('Ventas');
