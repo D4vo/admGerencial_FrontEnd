@@ -21,23 +21,10 @@
           </select>
         </div>
 
-        <div v-if="tipoComprobante === 'Factura A'" class="bloque-cliente effecto-aparecer">
-          <h4 class="titulo-cliente">Datos del Responsable Inscripto</h4>
-          <div class="grid-inputs">
-            <div class="form-grupo">
-              <label>CUIT *</label>
-              <input type="text" v-model="clienteFactura.cuit" placeholder="Ej: 30-12345678-9" />
-            </div>
-            <div class="form-grupo">
-              <label>Razón Social *</label>
-              <input type="text" v-model="clienteFactura.razon_social" placeholder="Ej: Empresa SRL" />
-            </div>
-          </div>
-          <div class="form-grupo">
-            <label>Domicilio *</label>
-            <input type="text" v-model="clienteFactura.domicilio" placeholder="Ej: Sáenz Peña, Chaco" />
-          </div>
-        </div>
+        <FormDatosFiscales 
+          v-if="tipoComprobante === 'Factura A'" 
+          v-model="clienteFactura" 
+        />
 
         <hr class="divisor" />
 
@@ -117,6 +104,7 @@
 
 <script setup>
 import { ref, computed, watch, nextTick } from 'vue';
+import FormDatosFiscales from './FormDatosFiscales.vue'; // Importamos el subcomponente extraído
 
 const props = defineProps({
   show: { type: Boolean, required: true },
@@ -170,7 +158,6 @@ const vuelto = computed(() => {
 
 // Validación dinámica combinada (Dinero + Datos Fiscales)
 const puedeConfirmar = computed(() => {
-  // 1. Validar el pago
   let pagoValido = false;
   if (metodoPago.value === 'Transferencia') {
     pagoValido = true;
@@ -178,7 +165,6 @@ const puedeConfirmar = computed(() => {
     pagoValido = montoRecibido.value >= props.total;
   }
 
-  // 2. Validar que la Factura A tenga sus datos completos
   let datosFiscalesValidos = true;
   if (tipoComprobante.value === 'Factura A') {
     const c = clienteFactura.value;
@@ -203,7 +189,6 @@ const textoBotonConfirmar = computed(() => {
 const confirmar = () => {
   if (!puedeConfirmar.value) return;
 
-  // 1. Base compartida por todos los documentos
   const payloadVenta = {
     fecha: new Date().toISOString(),
     tipo_comprobante: tipoComprobante.value,
@@ -219,7 +204,6 @@ const confirmar = () => {
     }))
   };
 
-  // 2. Inyección dinámica según el comprobante seleccionado
   if (tipoComprobante.value === 'Factura B') {
     payloadVenta.cliente = {
       condicion_iva: "Consumidor Final",
@@ -227,7 +211,6 @@ const confirmar = () => {
     };
   } 
   else if (tipoComprobante.value === 'Factura A') {
-    // Inyectamos los datos del formulario
     payloadVenta.cliente = {
       condicion_iva: "Responsable Inscripto",
       cuit: clienteFactura.value.cuit.trim(),
@@ -235,7 +218,6 @@ const confirmar = () => {
       domicilio: clienteFactura.value.domicilio.trim()
     };
     
-    // Cálculo matemático exacto para desglosar el 21% de IVA del total facturado
     const neto = Number((props.total / 1.21).toFixed(2));
     const iva = Number((props.total - neto).toFixed(2));
     
@@ -245,7 +227,6 @@ const confirmar = () => {
     };
   }
 
-  // Se envía el paquete ya procesado y estructurado al componente principal
   emit('confirmarVenta', payloadVenta);
 };
 </script>
@@ -359,34 +340,6 @@ select {
   background-repeat: no-repeat;
   background-position: right 1rem center;
   background-size: 1em;
-}
-
-/* Bloque Cliente Factura A */
-.bloque-cliente {
-  background: #f8fafc;
-  padding: 1.25rem;
-  border-radius: 12px;
-  border: 1px solid #e2e8f0;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.titulo-cliente {
-  margin: 0;
-  font-size: 0.9rem;
-  font-weight: 700;
-  color: #0f172a;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  border-bottom: 1px dashed #cbd5e1;
-  padding-bottom: 0.75rem;
-}
-
-.grid-inputs {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
 }
 
 .divisor {
@@ -558,11 +511,5 @@ input:focus, select:focus {
 @keyframes fadeInDown {
   from { opacity: 0; transform: translateY(-10px); }
   to { opacity: 1; transform: translateY(0); }
-}
-
-@media (max-width: 480px) {
-  .grid-inputs {
-    grid-template-columns: 1fr;
-  }
 }
 </style>
