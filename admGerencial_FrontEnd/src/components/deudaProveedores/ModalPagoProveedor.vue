@@ -3,7 +3,7 @@
     <div class="modal-contenedor">
       <header class="modal-header">
         <h3>Registrar Pago a Proveedor</h3>
-        <button class="btn-cerrar-X" @click="emit('close')">&times;</button>
+        <button class="btn-cerrar-X" @click="cerrarModal">&times;</button>
       </header>
 
       <main class="modal-cuerpo" v-if="deuda">
@@ -29,33 +29,55 @@
         </div>
 
         <div class="form-grupo">
-          <label>Método de Pago</label>
+          <label>Método de Pago *</label>
           <select v-model="form.metodo_pago">
             <option value="Efectivo">Efectivo (Cuenta Caja)</option>
             <option value="Transferencia">Transferencia (Cuenta Banco)</option>
           </select>
         </div>
 
+        <hr class="divisor-suave" />
+
+        <h4 class="titulo-seccion">Datos del Comprobante (Entregado por el proveedor)</h4>
+
         <div class="form-grupo">
+          <label>Tipo de Comprobante *</label>
+          <select v-model="form.tipo_comprobante_recibo">
+            <option value="Recibo X">Recibo X</option>
+            <option value="Recibo A">Recibo A</option>
+            <option value="Recibo B">Recibo B</option>
+          </select>
+        </div>
+
+        <div class="form-grupo">
+          <label>N° de Comprobante *</label>
+          <input 
+            type="text" 
+            v-model="form.nro_comprobante_recibido" 
+            placeholder="Ej: 0002-00004561"
+          />
+        </div>
+
+        <div class="form-grupo mt-1">
           <label>Observaciones / Notas</label>
           <textarea 
             v-model="form.observaciones" 
-            rows="3" 
+            rows="2" 
             placeholder="Ej: Entrega a cuenta al preventista..."
           ></textarea>
         </div>
       </main>
 
       <footer class="modal-footer">
-        <button class="btn-cancelar" @click="emit('close')">Cancelar</button>
-        <button class="btn-confirmar" @click="confirmarPago">Confirmar Pago</button>
+        <button class="btn-cancelar" @click="cerrarModal">Cancelar</button>
+        <button class="btn-confirmar" :disabled="!puedeConfirmar" @click="confirmarPago">Confirmar Pago</button>
       </footer>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, watch } from 'vue';
+import { ref, watch, computed } from 'vue';
 
 const props = defineProps({
   show: { type: Boolean, required: true },
@@ -67,21 +89,31 @@ const emit = defineEmits(['close', 'confirm']);
 const form = ref({
   monto_pagado: 0,
   metodo_pago: 'Efectivo',
-  observaciones: ''
+  observaciones: '',
+  tipo_comprobante_recibo: 'Recibo X',
+  nro_comprobante_recibido: ''
 });
 
 const errorMonto = ref(false);
 const mensajeErrorMonto = ref('');
 
-// Cada vez que se abre el modal con un proveedor, pre-cargamos el total del saldo pendiente
-watch(() => props.deuda, (nuevaDeuda) => {
-  if (nuevaDeuda) {
-    form.value.monto_pagado = nuevaDeuda.saldo_pendiente;
-    form.value.metodo_pago = 'Efectivo';
-    form.value.observaciones = '';
+// Resetea todos los campos al abrir el modal con un nuevo proveedor
+watch(() => props.show, (isOpen) => {
+  if (isOpen && props.deuda) {
+    form.value = {
+      monto_pagado: props.deuda.saldo_pendiente,
+      metodo_pago: 'Efectivo',
+      observaciones: '',
+      tipo_comprobante_recibo: 'Recibo X',
+      nro_comprobante_recibido: ''
+    };
     errorMonto.value = false;
   }
-}, { immediate: true });
+});
+
+const puedeConfirmar = computed(() => {
+  return form.value.nro_comprobante_recibido && form.value.nro_comprobante_recibido.trim() !== '';
+});
 
 const confirmarPago = () => {
   if (!form.value.monto_pagado || form.value.monto_pagado <= 0) {
@@ -97,11 +129,29 @@ const confirmarPago = () => {
   }
 
   errorMonto.value = false;
-  emit('confirm', { ...form.value });
+
+  const payload = {
+    fecha: new Date().toISOString(),
+    cuenta_proveedor_id: props.deuda.cuenta_id, // Usamos la ID original provista por el objeto
+    monto_pagado: Number(form.value.monto_pagado),
+    metodo_pago: form.value.metodo_pago,
+    observaciones: form.value.observaciones.trim(),
+    
+    tipo_comprobante: form.value.tipo_comprobante_recibo,
+    nro_comprobante_recibido: form.value.nro_comprobante_recibido.trim(),
+    comprobante_padre_id: null // Se envía null porque cancela un saldo global de cuenta corriente
+  };
+
+  emit('confirm', payload);
+};
+
+const cerrarModal = () => {
+  emit('close');
 };
 </script>
 
 <style scoped>
+.titulo-seccion { margin: 0 0 0.5rem 0; font-size: 0.95rem; color: #111827; font-weight: 700; }
 .modal-overlay {
   position: fixed;
   top: 0;

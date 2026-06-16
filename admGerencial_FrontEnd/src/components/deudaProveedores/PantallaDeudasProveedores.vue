@@ -82,13 +82,13 @@ const abrirModalPago = (deuda) => {
 // PROCESAMIENTO DEL COBRO (POST)
 // ==========================================
 const procesarPagoAPI = async (datosPagoForm) => {
-  // Armamos el JSON con el formato exacto requerido por el modelo del backend
+  // Como el Modal ya armó la estructura con todos los campos necesarios 
+  // (incluyendo los del comprobante), simplemente usamos ese objeto.
+  // Solo nos aseguramos de inyectarle la fecha actual exacta.
+  
   const payloadPago = {
+    ...datosPagoForm, // Copia TODO lo que armó el modal (tipo_comprobante, nro, padre_id, etc.)
     fecha: new Date().toISOString(), 
-    cuenta_proveedor_id: deudaSeleccionada.value.cuenta_id,
-    monto_pagado: datosPagoForm.monto_pagado,
-    metodo_pago: datosPagoForm.metodo_pago,
-    observaciones: datosPagoForm.observaciones || ""
   };
 
   console.log("🚀 ENVIANDO ESTRUCTURA DE PAGO AL BACKEND:", JSON.stringify(payloadPago, null, 2));

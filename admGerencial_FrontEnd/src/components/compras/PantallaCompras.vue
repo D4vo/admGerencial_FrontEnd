@@ -87,27 +87,31 @@ const enviarAlBackend = async (datosCabecera) => {
 
   cargando.value = true
 
-  // 1. Limpiamos los detalles
+  // 1. Limpiamos y formateamos los detalles de los productos
   const detallesFormateados = detallesCompra.value.map(item => ({
     producto_id: item.producto_id,
     cantidad: item.cantidad,
     costo_unitario: item.costo_unitario
   }))
 
-  // 2. Base del payload
+  // 2. Base del payload con los datos obligatorios que siempre viajan
   const payload = {
     fecha: new Date().toISOString().split('T')[0],
     tipo_comprobante: datosCabecera.tipo_comprobante,
+    nro_comprobante: datosCabecera.nro_comprobante, // <-- Ahora el número siempre viaja
     total: totalCompra.value,
     detalles: detallesFormateados
   }
 
-  // 3. Condicional para la estructura del JSON
-  if (datosCabecera.tipo_comprobante === 'Cuenta Corriente') {
+  // 3. Condicional inteligente basado en la presencia del proveedor (Deuda)
+  if (datosCabecera.cuenta_proveedor_id) {
+    // ESCENARIO A: Es una compra a Crédito (Cuenta Corriente)
     payload.cuenta_proveedor_id = datosCabecera.cuenta_proveedor_id
+    payload.metodo_pago = null // Explicitamos que no hay desembolso inmediato
   } else {
-    payload.nro_comprobante = datosCabecera.nro_comprobante
+    // ESCENARIO B: Es una compra al Contado
     payload.metodo_pago = datosCabecera.metodo_pago
+    payload.cuenta_proveedor_id = null // No está asociado a una cuenta corriente de pasivo
   }
  
   try {

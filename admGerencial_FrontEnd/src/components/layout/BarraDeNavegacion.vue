@@ -3,20 +3,40 @@ import { ref } from 'vue';
 
 const emit = defineEmits(['navegar']);
 
-// Mapeamos los IDs EXACTOS de tu PantallaPrincipal con las etiquetas e íconos bonitos
-const menuItems = [
-  { id: 'Ventas', label: 'Ventas', icon: '🛒' },
-  { id: 'Compras', label: 'Compras', icon: '🛍️' },
-  { id: 'Productos', label: 'Productos', icon: '📦' },
-  { id: 'Cuentas', label: 'Plan de Cuentas', icon: '📑' },
-  { id: 'Libro Diario', label: 'Libro Diario', icon: '📓' },
-  { id: 'Deudas Proveedores', label: 'Deudas a Prov.', icon: '💸' },
-  { id: 'Libro Mayor', label: 'Libro Mayor', icon: '📘' },
-  { id: 'Inicio Actividades', label: 'Inicio Actividades', icon: '🚀' },
-   { id: 'Documentos', label: 'Documentos', icon: '📓' }
+// Mapeamos los IDs EXACTOS. Movimos 'Deudas Proveedores' a Contabilidad.
+const seccionesMenu = [
+  {
+    titulo: 'Módulos Principales',
+    items: [
+      { id: 'Ventas', label: 'Ventas', icon: '🛒' },
+      { id: 'Compras', label: 'Compras', icon: '🛍️' },
+      { id: 'Productos', label: 'Productos', icon: '📦' }
+    ]
+  },
+  {
+    titulo: 'Contabilidad',
+    items: [
+      { id: 'Deudas Proveedores', label: 'Deudas a Prov.', icon: '💸' },
+      { id: 'Cuentas', label: 'Plan de Cuentas', icon: '📑' },
+      { id: 'Documentos', label: 'Documentos', icon: '📓' },
+      { id: 'Libro Diario', label: 'Libro Diario', icon: '📓' },
+      { id: 'Libro Mayor', label: 'Libro Mayor', icon: '📘' },
+      { id: 'Inicio Actividades', label: 'Inicio Actividades', icon: '🚀' }
+    ]
+  }
 ];
 
 const botonActivo = ref('Ventas');
+
+// Estado reactivo para recordar qué acordeones están abiertos (true) o cerrados (false)
+const seccionesAbiertas = ref({
+  'Módulos Principales': true,
+  'Contabilidad': false // Inicia cerrado para que se vea más limpio de entrada
+});
+
+const toggleSeccion = (titulo) => {
+  seccionesAbiertas.value[titulo] = !seccionesAbiertas.value[titulo];
+};
 
 const emitirNavegacion = (botonId) => {
   botonActivo.value = botonId;
@@ -32,19 +52,31 @@ const emitirNavegacion = (botonId) => {
     </div>
 
     <nav class="nav-menu">
-      <div class="menu-seccion">
-        <span class="seccion-titulo">Módulos Principales</span>
-        
-        <button
-          v-for="item in menuItems"
-          :key="item.id"
-          class="nav-item effecto-hover"
-          :class="{ activo: botonActivo === item.id }"
-          @click="emitirNavegacion(item.id)"
-        >
-          <span class="icon">{{ item.icon }}</span>
-          <span class="text">{{ item.label }}</span>
+      <div 
+        v-for="(seccion, index) in seccionesMenu" 
+        :key="index" 
+        class="menu-seccion"
+      >
+        <button class="seccion-header" @click="toggleSeccion(seccion.titulo)">
+          <span class="seccion-titulo">{{ seccion.titulo }}</span>
+          <span class="chevron" :class="{ 'abierto': seccionesAbiertas[seccion.titulo] }">›</span>
         </button>
+        
+        <div class="seccion-contenido" :class="{ 'abierta': seccionesAbiertas[seccion.titulo] }">
+          <div class="seccion-inner">
+            <button
+              v-for="item in seccion.items"
+              :key="item.id"
+              class="nav-item effecto-hover"
+              :class="{ activo: botonActivo === item.id }"
+              @click="emitirNavegacion(item.id)"
+            >
+              <span class="icon">{{ item.icon }}</span>
+              <span class="text">{{ item.label }}</span>
+            </button>
+          </div>
+        </div>
+
       </div>
     </nav>
     
@@ -65,7 +97,7 @@ const emitirNavegacion = (botonId) => {
 .sidebar {
   width: 280px;
   height: 100vh;
-  background-color: #0f172a; /* Slate 900 (Azul/Gris muy oscuro) */
+  background-color: #0f172a; /* Slate 900 */
   color: #94a3b8; /* Slate 400 */
   display: flex;
   flex-direction: column;
@@ -82,6 +114,7 @@ const emitirNavegacion = (botonId) => {
   gap: 1rem;
   border-bottom: 1px solid #1e293b;
   background: rgba(15, 23, 42, 0.95);
+  z-index: 10;
 }
 
 .logo-icon {
@@ -109,29 +142,75 @@ const emitirNavegacion = (botonId) => {
 
 /* Área de Navegación */
 .nav-menu {
-  padding: 1.5rem 1.25rem;
+  padding: 1rem 1.25rem;
   flex: 1;
   overflow-y: auto;
 }
 
-/* Scrollbar invisible pero funcional */
 .nav-menu::-webkit-scrollbar { width: 4px; }
 .nav-menu::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
 
 .menu-seccion {
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  margin-bottom: 0.5rem;
+}
+
+/* --- ANIMACIONES DEL ACORDEÓN --- */
+
+.seccion-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  background: transparent;
+  border: none;
+  padding: 0.75rem 0.5rem;
+  cursor: pointer;
+  color: #64748b;
+  border-radius: 8px;
+  transition: background-color 0.2s;
+}
+
+.seccion-header:hover {
+  background-color: rgba(30, 41, 59, 0.5);
+  color: #94a3b8;
 }
 
 .seccion-titulo {
   font-size: 0.75rem;
   font-weight: 700;
-  color: #64748b;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  margin-bottom: 0.75rem;
-  padding-left: 0.5rem;
+}
+
+.chevron {
+  font-size: 1.2rem;
+  font-weight: bold;
+  line-height: 1;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.chevron.abierto {
+  transform: rotate(90deg); /* Rota la flechita hacia abajo */
+}
+
+/* Magia del CSS Grid para animar la altura automáticamente */
+.seccion-contenido {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.seccion-contenido.abierta {
+  grid-template-rows: 1fr;
+}
+
+.seccion-inner {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
 }
 
 /* Botones del Menú */
@@ -155,26 +234,24 @@ const emitirNavegacion = (botonId) => {
 .nav-item .icon {
   font-size: 1.2rem;
   transition: transform 0.3s ease;
-  filter: grayscale(100%) opacity(0.7); /* Íconos apagados por defecto */
+  filter: grayscale(100%) opacity(0.7);
 }
-
-/* --- ANIMACIONES Y ESTADOS (MICRO-INTERACCIONES) --- */
 
 .nav-item:hover {
   background: #1e293b;
   color: #f8fafc;
-  transform: translateX(6px); /* Pequeño deslizamiento a la derecha */
+  transform: translateX(4px);
 }
 
 .nav-item:hover .icon {
   filter: grayscale(0%) opacity(1);
-  transform: scale(1.15); /* El ícono crece un poquito */
+  transform: scale(1.15);
 }
 
-/* Estado Activo (La pantalla que estás viendo) */
+/* Estado Activo */
 .nav-item.activo {
   background: rgba(16, 185, 129, 0.1);
-  color: #10b981; /* Verde esmeralda */
+  color: #10b981;
   position: relative;
 }
 
@@ -182,7 +259,6 @@ const emitirNavegacion = (botonId) => {
   filter: grayscale(0%) opacity(1);
 }
 
-/* Barrita indicadora verde a la izquierda del botón activo */
 .nav-item.activo::before {
   content: '';
   position: absolute;
@@ -195,11 +271,12 @@ const emitirNavegacion = (botonId) => {
   box-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
 }
 
-/* Footer de la Barra (Usuario) */
+/* Footer de la Barra */
 .sidebar-footer {
   padding: 1.25rem 1.5rem;
   border-top: 1px solid #1e293b;
   background: rgba(15, 23, 42, 0.95);
+  z-index: 10;
 }
 
 .usuario-info {
