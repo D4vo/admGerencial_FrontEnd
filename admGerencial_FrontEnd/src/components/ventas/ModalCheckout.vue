@@ -17,13 +17,14 @@
           <select v-model="tipoComprobante">
             <option value="Ticket">Ticket (Consumidor Final)</option>
             <option value="Factura B">Factura B (Consumidor Final)</option>
-            <option value="Factura A">Factura A (Responsable Inscripto)</option>
+            <option value="Factura A">Factura A</option>
           </select>
         </div>
 
         <FormDatosFiscales 
           v-if="tipoComprobante === 'Factura A'" 
-          v-model="clienteFactura" 
+          v-model="clienteFactura"
+          @abrirBuscador="mostrarBuscadorClientes = true" 
         />
 
         <hr class="divisor" />
@@ -52,7 +53,7 @@
 
         <div v-if="metodoPago === 'Efectivo'" class="bloque-entrada effecto-aparecer">
           <div class="form-grupo">
-            <label>Monto Recibido (Caja)</label>
+            <label>Monto Received (Caja)</label>
             <div class="input-con-prefijo">
               <span class="prefijo">$</span>
               <input 
@@ -100,11 +101,18 @@
       </footer>
     </div>
   </div>
+
+  <ModalSeleccionCliente 
+    :show="mostrarBuscadorClientes" 
+    @close="mostrarBuscadorClientes = false"
+    @seleccionar="aplicarClienteSeleccionado"
+  />
 </template>
 
 <script setup>
 import { ref, computed, watch, nextTick } from 'vue';
-import FormDatosFiscales from './FormDatosFiscales.vue'; // Importamos el subcomponente extraído
+import FormDatosFiscales from './FormDatosFiscales.vue';
+import ModalSeleccionCliente from './ModalSeleccionCliente.vue'; // Importamos el nuevo buscador
 
 const props = defineProps({
   show: { type: Boolean, required: true },
@@ -119,12 +127,14 @@ const tipoComprobante = ref('Ticket');
 const metodoPago = ref('Efectivo');
 const montoRecibido = ref(0);
 const inputRecibido = ref(null);
+const mostrarBuscadorClientes = ref(false); // Switch del buscador
 
 // Estado para los datos de Factura A
 const clienteFactura = ref({
   cuit: '',
   razon_social: '',
-  domicilio: ''
+  domicilio: '',
+  condicion_iva: 'Responsable Inscripto'
 });
 
 // Reinicio del formulario al abrir
@@ -133,13 +143,25 @@ watch(() => props.show, async (isOpen) => {
     tipoComprobante.value = 'Ticket';
     metodoPago.value = 'Efectivo';
     montoRecibido.value = props.total;
-    clienteFactura.value = { cuit: '', razon_social: '', domicilio: '' };
+    clienteFactura.value = { cuit: '', razon_social: '', domicilio: '', condicion_iva: 'Responsable Inscripto' };
+    mostrarBuscadorClientes.value = false;
     
     await nextTick();
     inputRecibido.value?.focus();
     inputRecibido.value?.select();
   }
 });
+
+// NUEVA FUNCIÓN: Autocompleta los campos fiscales trayendo la info de la grilla
+const aplicarClienteSeleccionado = (clienteSeleccionado) => {
+  clienteFactura.value = {
+    cuit: clienteSeleccionado.cuit,
+    razon_social: clienteSeleccionado.razon_social,
+    domicilio: clienteSeleccionado.domicilio_fiscal || '',
+    condicion_iva: clienteSeleccionado.condicion_iva || 'Responsable Inscripto'
+  };
+  mostrarBuscadorClientes.value = false; // Cierra el modal
+};
 
 const setMetodo = (metodo) => {
   metodoPago.value = metodo;
@@ -156,16 +178,10 @@ const vuelto = computed(() => {
   return Math.max(0, montoRecibido.value - props.total);
 });
 
-// Validación dinámica combinada (Dinero + Datos Fiscales)
 const puedeConfirmar = computed(() => {
-  let pagoValido = false;
-  if (metodoPago.value === 'Transferencia') {
-    pagoValido = true;
-  } else {
-    pagoValido = montoRecibido.value >= props.total;
-  }
-
+  let pagoValido = metodoPago.value === 'Transferencia' ? true : montoRecibido.value >= props.total;
   let datosFiscalesValidos = true;
+
   if (tipoComprobante.value === 'Factura A') {
     const c = clienteFactura.value;
     if (!c.cuit.trim() || !c.razon_social.trim() || !c.domicilio.trim()) {
@@ -176,15 +192,8 @@ const puedeConfirmar = computed(() => {
   return pagoValido && datosFiscalesValidos;
 });
 
-const claseBotonConfirmar = computed(() => {
-  if (metodoPago.value === 'Transferencia') return 'btn-transfer';
-  return 'btn-cash';
-});
-
-const textoBotonConfirmar = computed(() => {
-  if (metodoPago.value === 'Transferencia') return 'Confirmar Transferencia';
-  return 'Confirmar Cobro Efectivo';
-});
+const claseBotonConfirmar = computed(() => metodoPago.value === 'Transferencia' ? 'btn-transfer' : 'btn-cash');
+const textoBotonConfirmar = computed(() => metodoPago.value === 'Transferencia' ? 'Confirmar Transferencia' : 'Confirmar Cobro Efectivo');
 
 const confirmar = () => {
   if (!puedeConfirmar.value) return;
@@ -212,7 +221,7 @@ const confirmar = () => {
   } 
   else if (tipoComprobante.value === 'Factura A') {
     payloadVenta.cliente = {
-      condicion_iva: "Responsable Inscripto",
+      condicion_iva: clienteFactura.value.condicion_iva,
       cuit: clienteFactura.value.cuit.trim(),
       razon_social: clienteFactura.value.razon_social.trim(),
       domicilio: clienteFactura.value.domicilio.trim()
@@ -221,10 +230,7 @@ const confirmar = () => {
     const neto = Number((props.total / 1.21).toFixed(2));
     const iva = Number((props.total - neto).toFixed(2));
     
-    payloadVenta.impuestos = {
-      subtotal_neto: neto,
-      iva_21: iva
-    };
+    payloadVenta.impuestos = { subtotal_neto: neto, iva_21: iva };
   }
 
   emit('confirmarVenta', payloadVenta);
@@ -233,283 +239,52 @@ const confirmar = () => {
 
 <style scoped>
 /* GENERAL */
-.modal-overlay {
-  position: fixed;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  background: rgba(17, 24, 39, 0.5); 
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-  backdrop-filter: blur(4px); 
-}
-
-.modal-contenedor {
-  background: #ffffff;
-  border-radius: 16px; 
-  width: 100%;
-  max-width: 480px; 
-  max-height: 95vh;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15); 
-  border: 1px solid #e5e7eb;
-  overflow-y: auto;
-  transition: all 0.3s ease;
-}
-
-/* HEADER */
-.modal-header {
-  padding: 1.25rem 1.5rem;
-  border-bottom: 1px solid #f3f4f6;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  position: sticky;
-  top: 0;
-  background: #ffffff;
-  z-index: 10;
-}
-
-.modal-header h2 { 
-  margin: 0; 
-  font-size: 1.25rem; 
-  color: #111827; 
-  font-weight: 700; 
-  letter-spacing: -0.025em;
-}
-
-.btn-cerrar-X { 
-  background: none; border: none; 
-  font-size: 1.75rem; color: #9ca3af; 
-  cursor: pointer; 
-  transition: color 0.2s;
-}
-
+.modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(17, 24, 39, 0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; backdrop-filter: blur(4px); }
+.modal-contenedor { background: #ffffff; border-radius: 16px; width: 100%; max-width: 480px; max-height: 95vh; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15); border: 1px solid #e5e7eb; overflow-y: auto; transition: all 0.3s ease; }
+.modal-header { padding: 1.25rem 1.5rem; border-bottom: 1px solid #f3f4f6; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: #ffffff; z-index: 10; }
+.modal-header h2 { margin: 0; font-size: 1.25rem; color: #111827; font-weight: 700; letter-spacing: -0.025em; }
+.btn-cerrar-X { background: none; border: none; font-size: 1.75rem; color: #9ca3af; cursor: pointer; transition: color 0.2s; }
 .btn-cerrar-X:hover { color: #ef4444; }
-
-/* CUERPO */
-.modal-cuerpo { 
-  padding: 1.5rem; 
-  display: flex; 
-  flex-direction: column; 
-  gap: 1.5rem; 
-}
-
-/* 1. Bloque Total */
-.bloque-total {
-  background: #f9fafb;
-  padding: 1.25rem;
-  border-radius: 12px;
-  border: 1px solid #f3f4f6;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-}
-
-.total-label { 
-  font-size: 0.75rem; 
-  font-weight: 600; 
-  color: #6b7280; 
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  margin-bottom: 0.5rem;
-}
-
-.total-monto { 
-  font-size: 2.25rem; 
-  font-weight: 800; 
-  color: #111827; 
-  letter-spacing: -0.05em;
-}
-
-/* Formulario General */
+.modal-cuerpo { padding: 1.5rem; display: flex; flex-direction: column; gap: 1.5rem; }
+.bloque-total { background: #f9fafb; padding: 1.25rem; border-radius: 12px; border: 1px solid #f3f4f6; display: flex; flex-direction: column; align-items: center; text-align: center; }
+.total-label { font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.5rem; }
+.total-monto { font-size: 2.25rem; font-weight: 800; color: #111827; letter-spacing: -0.05em; }
 .form-grupo { display: flex; flex-direction: column; }
-
-.form-grupo label { 
-  font-size: 0.85rem; 
-  font-weight: 600; 
-  color: #374151; 
-  margin-bottom: 0.5rem; 
-}
-
-select {
-  cursor: pointer;
-  appearance: none;
-  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-  background-repeat: no-repeat;
-  background-position: right 1rem center;
-  background-size: 1em;
-}
-
-.divisor {
-  border: 0;
-  border-top: 1px dashed #e5e7eb;
-  margin: 0;
-}
-
-/* Selector de Pago Visual (PILLS) */
-.selector-pago {
-  display: flex;
-  gap: 1rem;
-}
-
-.pilula-pago {
-  flex: 1;
-  background: #ffffff;
-  border: 2px solid #e5e7eb;
-  border-radius: 12px;
-  padding: 1rem;
-  cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.75rem;
-  transition: all 0.2s ease;
-}
-
+.form-grupo label { font-size: 0.85rem; font-weight: 600; color: #374151; margin-bottom: 0.5rem; }
+select { cursor: pointer; appearance: none; background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); background-repeat: no-repeat; background-position: right 1rem center; background-size: 1em; }
+.divisor { border: 0; border-top: 1px dashed #e5e7eb; margin: 0; }
+.selector-pago { display: flex; gap: 1rem; }
+.pilula-pago { flex: 1; background: #ffffff; border: 2px solid #e5e7eb; border-radius: 12px; padding: 1rem; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.75rem; transition: all 0.2s ease; }
 .pilula-pago .icono { font-size: 1.75rem; }
 .pilula-pago .texto { font-size: 0.95rem; font-weight: 600; color: #4b5563; }
-
-.pilula-pago:hover {
-  border-color: #d1d5db;
-  background: #f9fafb;
-}
-
-.pilula-pago.cash.activa {
-  background: #ecfdf5;
-  border-color: #10b981;
-  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1);
-}
+.pilula-pago:hover { border-color: #d1d5db; background: #f9fafb; }
+.pilula-pago.cash.activa { background: #ecfdf5; border-color: #10b981; box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1); }
 .pilula-pago.cash.activa .texto { color: #065f46; }
-
-.pilula-pago.transfer.activa {
-  background: #eff6ff;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
-}
+.pilula-pago.transfer.activa { background: #eff6ff; border-color: #3b82f6; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); }
 .pilula-pago.transfer.activa .texto { color: #1e40af; }
-
-/* Entradas y Vuelto */
-input, select {
-  padding: 0.75rem 1rem;
-  border: 1px solid #cbd5e1;
-  border-radius: 8px;
-  font-size: 0.95rem;
-  background-color: #ffffff;
-  color: #1e293b;
-  outline: none;
-  transition: all 0.2s;
-  width: 100%;
-}
-
-input:focus, select:focus {
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
-
+input, select { padding: 0.75rem 1rem; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; background-color: #ffffff; color: #1e293b; outline: none; transition: all 0.2s; width: 100%; }
+input:focus, select:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
 .input-con-prefijo { position: relative; display: flex; align-items: center; }
 .prefijo { position: absolute; left: 1rem; color: #9ca3af; font-weight: 500; }
 .input-con-prefijo input { padding-left: 2rem; font-weight: 600;}
-
-.transfer-info {
-  background: #eff6ff;
-  padding: 1rem;
-  border-radius: 10px;
-  border: 1px solid #bfdbfe;
-  color: #1e40af;
-  font-size: 0.9rem;
-  text-align: center;
-}
-
-.bloque-vuelto {
-  background: #ecfdf5;
-  padding: 1rem;
-  border-radius: 12px;
-  border: 1px solid #a7f3d0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  margin-top: 0.5rem;
-}
-
-.vuelto-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
+.transfer-info { background: #eff6ff; padding: 1rem; border-radius: 10px; border: 1px solid #bfdbfe; color: #1e40af; font-size: 0.9rem; text-align: center; }
+.bloque-vuelto { background: #ecfdf5; padding: 1rem; border-radius: 12px; border: 1px solid #a7f3d0; display: flex; flex-direction: column; gap: 0.75rem; margin-top: 0.5rem; }
+.vuelto-item { display: flex; justify-content: space-between; align-items: center; }
 .vuelto-item.recibio { font-size: 0.9rem; color: #065f46; }
 .vuelto-item.recibio .monto { font-weight: 600; }
-
 .vuelto-item.cambio { font-size: 1rem; color: #065f46; border-top: 1px dashed #a7f3d0; padding-top: 0.75rem; }
 .vuelto-item.cambio .label { font-weight: 700; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.05em;}
 .vuelto-item.cambio .monto-final { font-size: 1.75rem; font-weight: 800; color: #047857; letter-spacing: -0.05em; }
-
-.advertencia {
-  color: #b45309;
-  background-color: #fffbeb;
-  border: 1px solid #fef3c7;
-  padding: 0.75rem;
-  border-radius: 8px;
-  font-size: 0.85rem;
-  margin-top: 1rem;
-}
-
-/* FOOTER */
-.modal-footer {
-  padding: 1.25rem 1.5rem;
-  background: #f8fafc;
-  border-top: 1px solid #f1f5f9;
-  display: flex;
-  justify-content: flex-end;
-  gap: 1rem;
-  position: sticky;
-  bottom: 0;
-}
-
-.btn-cancelar {
-  background: white;
-  border: 1px solid #cbd5e1;
-  color: #475569;
-  padding: 0.75rem 1.5rem;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
+.advertencia { color: #b45309; background-color: #fffbeb; border: 1px solid #fef3c7; padding: 0.75rem; border-radius: 8px; font-size: 0.85rem; margin-top: 1rem; }
+.modal-footer { padding: 1.25rem 1.5rem; background: #f8fafc; border-top: 1px solid #f1f5f9; display: flex; justify-content: flex-end; gap: 1rem; position: sticky; bottom: 0; }
+.btn-cancelar { background: white; border: 1px solid #cbd5e1; color: #475569; padding: 0.75rem 1.5rem; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
 .btn-cancelar:hover { background: #f1f5f9; color: #0f172a;}
-
-.btn-confirmar {
-  border: none;
-  color: white;
-  padding: 0.75rem 1.5rem;
-  border-radius: 8px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
+.btn-confirmar { border: none; color: white; padding: 0.75rem 1.5rem; border-radius: 8px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
 .btn-cash { background: #10b981; }
 .btn-cash:hover:not(:disabled) { background: #059669; }
-
 .btn-transfer { background: #3b82f6; }
 .btn-transfer:hover:not(:disabled) { background: #2563eb; }
-
-.btn-confirmar:disabled { 
-  background: #cbd5e1; 
-  color: #94a3b8; 
-  cursor: not-allowed; 
-}
-
-/* Animaciones */
-.effecto-aparecer {
-  animation: fadeInDown 0.3s ease-out;
-}
-
-@keyframes fadeInDown {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
+.btn-confirmar:disabled { background: #cbd5e1; color: #94a3b8; cursor: not-allowed; }
+.effecto-aparecer { animation: fadeInDown 0.3s ease-out; }
+@keyframes fadeInDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
 </style>

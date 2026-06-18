@@ -1,8 +1,13 @@
 <template>
   <div class="bloque-fiscal effecto-aparecer">
-    <h4 class="titulo-fiscal">
-      <span class="icono-seccion">📋</span> Datos del Responsable Inscripto
-    </h4>
+    <div class="cabecera-fiscal-formulario">
+      <h4 class="titulo-fiscal">
+        <span class="icono-seccion">📋</span> Datos del Responsable Inscripto
+      </h4>
+      <button type="button" class="btn-buscar-existente" @click="emit('abrirBuscador')">
+        🔍 Buscar Existente
+      </button>
+    </div>
     
     <div class="grid-fiscal">
       <div class="form-grupo">
@@ -55,7 +60,8 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['update:modelValue']);
+// NUEVO: Agregamos 'abrirBuscador' a la lista de eventos emitidos
+const emit = defineEmits(['update:modelValue', 'abrirBuscador']);
 
 const updateField = (field, value) => {
   emit('update:modelValue', {
@@ -77,6 +83,15 @@ const updateField = (field, value) => {
   box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.01);
 }
 
+/* NUEVOS ESTILOS PARA LA CABECERA Y EL BOTÓN */
+.cabecera-fiscal-formulario {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px dashed #cbd5e1;
+  padding-bottom: 0.5rem;
+}
+
 .titulo-fiscal {
   margin: 0;
   font-size: 0.85rem;
@@ -87,8 +102,25 @@ const updateField = (field, value) => {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  border-bottom: 1px dashed #cbd5e1;
-  padding-bottom: 0.75rem;
+  border-bottom: none !important;
+  padding-bottom: 0 !important;
+}
+
+.btn-buscar-existente {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #2563eb;
+  padding: 0.3rem 0.6rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-buscar-existente:hover {
+  background: #f1f5f9;
+  border-color: #3b82f6;
 }
 
 .icono-seccion {
@@ -122,7 +154,6 @@ const updateField = (field, value) => {
   display: flex;
   align-items: center;
 }
-
 
 .input-fiscal {
   width: 100%;
