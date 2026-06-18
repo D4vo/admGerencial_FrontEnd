@@ -10,13 +10,14 @@ const seccionesMenu = [
     items: [
       { id: 'Ventas', label: 'Ventas', icon: '🛒' },
       { id: 'Compras', label: 'Compras', icon: '🛍️' },
-      { id: 'Productos', label: 'Productos', icon: '📦' }
+      { id: 'Productos', label: 'Productos', icon: '📦' },
+      { id: 'Deudas Proveedores', label: 'Deudas a Prov.', icon: '💸' },
+      { id: 'Clientes', label: 'Clientes.', icon: '🛍️' },
     ]
   },
   {
     titulo: 'Contabilidad',
     items: [
-      { id: 'Deudas Proveedores', label: 'Deudas a Prov.', icon: '💸' },
       { id: 'Cuentas', label: 'Plan de Cuentas', icon: '📑' },
       { id: 'Documentos', label: 'Documentos', icon: '📓' },
       { id: 'Libro Diario', label: 'Libro Diario', icon: '📓' },
