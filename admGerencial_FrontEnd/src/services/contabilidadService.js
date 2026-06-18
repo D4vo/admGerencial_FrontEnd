@@ -19,5 +19,13 @@ export const contabilidadService = {
       body: JSON.stringify(datosInicio)
     });
     return respuesta;
+  },
+  // NUEVO: Registrar un Asiento Contable Manual (POST)
+  registrarAsientoManual: async (payload) => {
+    const respuesta = await apiFetch('/contabilidad/asientos-manuales', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+    return respuesta;
   }
 };

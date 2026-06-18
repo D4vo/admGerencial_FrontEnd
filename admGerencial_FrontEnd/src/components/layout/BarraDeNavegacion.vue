@@ -22,7 +22,8 @@ const seccionesMenu = [
       { id: 'Documentos', label: 'Documentos', icon: '📓' },
       { id: 'Libro Diario', label: 'Libro Diario', icon: '📓' },
       { id: 'Libro Mayor', label: 'Libro Mayor', icon: '📘' },
-      { id: 'Inicio Actividades', label: 'Inicio Actividades', icon: '🚀' }
+      { id: 'Inicio Actividades', label: 'Inicio Actividades', icon: '🚀' },
+      { id: 'Asiento Manual', label: 'Asiento Manual', icon: '📑' }
     ]
   }
 ];
