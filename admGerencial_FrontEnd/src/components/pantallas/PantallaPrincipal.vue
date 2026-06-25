@@ -12,11 +12,13 @@ import PantallaInicioActividades from '../InicioActividades/PantallaInicioActivi
 import PantallaDocumentos from '../Documentos/PantallaDocumentos.vue';
 import PantallaClientes from '../Clientes/PantallaClientes.vue';
 import PantallaAsientoManual from '../AsientoManual/PantallaAsientoManual.vue';
-// Mapeamos los nombres de los botones con sus componentes reales.
-// A medida que crees más pantallas, las importás y las agregás acá.
+import PantallaConfigCuentas from '../ConfigSistema/PantallaConfigCuentas.vue';
+import PantallaGastos from '../Gastos/PantallaGastos.vue';
+
 const mapaPantallas = {
   'Ventas': PantallaVentas,
   'Compras': PantallaCompras,
+  'Gastos': PantallaGastos,
   'Productos': PantallaProductos,
   'Cuentas': PantallaPlanCuentas,
   'Libro Diario': PantallaLibroDiario,
@@ -25,9 +27,8 @@ const mapaPantallas = {
   'Inicio Actividades' : PantallaInicioActividades,
   'Documentos': PantallaDocumentos,
   'Clientes': PantallaClientes,
-  'Asiento Manual': PantallaAsientoManual
-  // 'Libro Diario': PantallaLibroDiario,
-  // 'Balance': PantallaBalance
+  'Asiento Manual': PantallaAsientoManual,
+  'Config Cuentas': PantallaConfigCuentas
 };
 
 // shallowRef es mejor que ref para guardar componentes enteros (optimiza el rendimiento)

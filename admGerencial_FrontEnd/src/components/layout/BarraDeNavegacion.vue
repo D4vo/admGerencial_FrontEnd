@@ -11,6 +11,7 @@ const seccionesMenu = [
       { id: 'Ventas', label: 'Ventas', icon: '🛒' },
       { id: 'Compras', label: 'Compras', icon: '🛍️' },
       { id: 'Productos', label: 'Productos', icon: '📦' },
+      { id: 'Gastos', label: 'Gastos', icon: '🧾' },
       { id: 'Deudas Proveedores', label: 'Deudas a Prov.', icon: '💸' },
       { id: 'Clientes', label: 'Clientes.', icon: '🛍️' },
     ]
@@ -25,6 +26,12 @@ const seccionesMenu = [
       { id: 'Inicio Actividades', label: 'Inicio Actividades', icon: '🚀' },
       { id: 'Asiento Manual', label: 'Asiento Manual', icon: '📑' }
     ]
+  },
+  {
+    titulo: 'Configuración',
+    items: [
+      { id: 'Config Cuentas', label: 'Cuentas del Sistema', icon: '⚙️' }
+    ]
   }
 ];
 
@@ -33,7 +40,8 @@ const botonActivo = ref('Ventas');
 // Estado reactivo para recordar qué acordeones están abiertos (true) o cerrados (false)
 const seccionesAbiertas = ref({
   'Módulos Principales': true,
-  'Contabilidad': false // Inicia cerrado para que se vea más limpio de entrada
+  'Contabilidad': false,
+  'Configuración': false
 });
 
 const toggleSeccion = (titulo) => {
