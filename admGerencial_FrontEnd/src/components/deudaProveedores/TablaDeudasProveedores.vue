@@ -3,16 +3,16 @@
     <table>
       <thead>
         <tr>
-          <th>Código Cuenta</th>
-          <th>Proveedor / Cuenta</th>
+          <th>Proveedor</th>
+          <th>CUIT</th>
           <th class="col-monto">Saldo Pendiente</th>
           <th class="col-accion">Acción</th>
         </tr>
       </thead>
       <tbody>
-        <tr v-for="deuda in deudas" :key="deuda.cuenta_id">
-          <td class="texto-codigo">{{ deuda.cuenta_codigo }}</td>
-          <td class="font-medium">{{ deuda.proveedor_cuenta }}</td>
+        <tr v-for="deuda in deudas" :key="deuda.id">
+          <td class="font-medium">{{ deuda.nombre }}</td>
+          <td class="texto-codigo">{{ deuda.cuit || '-' }}</td>
           <td class="font-bold col-monto">$ {{ deuda.saldo_pendiente.toLocaleString('es-AR', { minimumFractionDigits: 2 }) }}</td>
           <td class="col-accion">
             <button class="btn-pagar" @click="emit('pagar', deuda)">

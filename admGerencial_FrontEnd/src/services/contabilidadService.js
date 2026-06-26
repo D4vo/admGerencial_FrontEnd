@@ -1,31 +1,33 @@
-import { apiFetch } from './api';
+import { apiFetch } from './api'
 
 export const contabilidadService = {
-  // 1. Obtener todos los asientos del libro diario
-  obtenerLibroDiario: async () => {
-    const respuesta = await apiFetch('/contabilidad/libro-diario/');
-    return Array.isArray(respuesta) ? respuesta : (respuesta.data || []);
+  obtenerLibroDiario: async (filtros = {}) => {
+    const params = new URLSearchParams()
+    if (filtros.periodo) params.set('periodo', filtros.periodo)
+    if (filtros.fecha_desde) params.set('fecha_desde', filtros.fecha_desde)
+    if (filtros.fecha_hasta) params.set('fecha_hasta', filtros.fecha_hasta)
+    const qs = params.toString()
+    const url = `/contabilidad/libro-diario/${qs ? '?' + qs : ''}`
+    const respuesta = await apiFetch(url)
+    return Array.isArray(respuesta) ? respuesta : respuesta.data || []
   },
 
-  // 2. NUEVO: Obtener todos los registros del libro mayor
-  obtenerLibroMayor: async () => {
-    const respuesta = await apiFetch('/contabilidad/libro-mayor/');
-    return Array.isArray(respuesta) ? respuesta : (respuesta.data || []);
+  obtenerLibroMayor: async (filtros = {}) => {
+    const params = new URLSearchParams()
+    if (filtros.periodo) params.set('periodo', filtros.periodo)
+    if (filtros.fecha_desde) params.set('fecha_desde', filtros.fecha_desde)
+    if (filtros.fecha_hasta) params.set('fecha_hasta', filtros.fecha_hasta)
+    const qs = params.toString()
+    const url = `/contabilidad/libro-mayor/${qs ? '?' + qs : ''}`
+    const respuesta = await apiFetch(url)
+    return Array.isArray(respuesta) ? respuesta : respuesta.data || []
   },
-  // 3. NUEVO: Registrar el inicio de actividades (POST)
+
   registrarInicioActividades: async (datosInicio) => {
-    const respuesta = await apiFetch('/capital/', {
-      method: 'POST',
-      body: JSON.stringify(datosInicio)
-    });
-    return respuesta;
+    return await apiFetch('/capital/', { method: 'POST', body: JSON.stringify(datosInicio) })
   },
-  // NUEVO: Registrar un Asiento Contable Manual (POST)
+
   registrarAsientoManual: async (payload) => {
-    const respuesta = await apiFetch('/contabilidad/asientos-manuales', {
-      method: 'POST',
-      body: JSON.stringify(payload)
-    });
-    return respuesta;
-  }
-};
+    return await apiFetch('/contabilidad/asientos-manuales', { method: 'POST', body: JSON.stringify(payload) })
+  },
+}

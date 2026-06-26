@@ -16,12 +16,16 @@ export const productosService = {
     return respuesta;
   },
 
-  // 3. NUEVO: Actualizar un producto existente (PUT)
   actualizar: async (id, productoActualizado) => {
     const respuesta = await apiFetch(`/productos/${id}`, {
       method: 'PUT',
       body: JSON.stringify(productoActualizado)
     });
     return respuesta;
+  },
+
+  obtenerAlertasStock: async () => {
+    const respuesta = await apiFetch('/productos/alertas-stock');
+    return Array.isArray(respuesta) ? respuesta : [];
   }
 };

@@ -98,11 +98,11 @@
 
           <template v-if="form.condicion_pago === 'Cuenta Corriente'">
             <div class="grupo effecto-aparecer">
-              <label>Cuenta de Proveedor *</label>
-              <select v-model.number="form.cuenta_proveedor_id">
+              <label>Proveedor *</label>
+              <select v-model.number="form.proveedor_id">
                 <option :value="null" disabled>Seleccione un proveedor...</option>
                 <option v-for="prov in cuentasProveedores" :key="prov.id" :value="prov.id">
-                  {{ prov.codigo }} - {{ prov.nombre }}
+                  {{ prov.nombre }}{{ prov.cuit ? ` (${prov.cuit})` : '' }}
                 </option>
               </select>
             </div>
@@ -162,6 +162,7 @@ import { ref, computed, onMounted } from 'vue'
 import ModalExito from '../ModalesGenericos/ModalExito.vue'
 import { gastosService } from '../../services/gastosService'
 import { cuentasService } from '../../services/cuentasService'
+import { proveedoresService } from '../../services/proveedoresService'
 
 const tiposCuenta = ['Activo', 'Pasivo', 'Patrimonio Neto', 'Ingreso', 'Egreso']
 
@@ -181,7 +182,7 @@ const formInicial = () => ({
   nro_comprobante: '',
   condicion_pago: 'Al Contado',
   metodo_pago: 'Efectivo',
-  cuenta_proveedor_id: null,
+  proveedor_id: null,
 })
 
 const form = ref(formInicial())
@@ -198,13 +199,13 @@ const formularioValido = computed(() => {
   const f = form.value
   if (!f.fecha || !f.descripcion.trim() || !f.cuenta_debe_id || !f.monto || f.monto <= 0) return false
   if (!f.tipo_comprobante) return false
-  if (f.condicion_pago === 'Cuenta Corriente' && !f.cuenta_proveedor_id) return false
+  if (f.condicion_pago === 'Cuenta Corriente' && !f.proveedor_id) return false
   return true
 })
 
 const limpiarPago = () => {
   if (form.value.condicion_pago === 'Al Contado') {
-    form.value.cuenta_proveedor_id = null
+    form.value.proveedor_id = null
     form.value.metodo_pago = 'Efectivo'
   } else {
     form.value.metodo_pago = null
@@ -213,16 +214,15 @@ const limpiarPago = () => {
 
 const cargarDatos = async () => {
   try {
-    const [cuentasData, gastosData] = await Promise.all([
+    const [cuentasData, gastosData, provData] = await Promise.all([
       cuentasService.obtenerTodas(),
       gastosService.obtenerTodos(),
+      proveedoresService.obtenerTodos(),
     ])
 
     const cuentas = Array.isArray(cuentasData) ? cuentasData : cuentasData?.data || []
     todasLasCuentas.value = cuentas
-    cuentasProveedores.value = cuentas.filter(
-      (c) => c.tipo === 'Pasivo' && c.nombre.toLowerCase().includes('proveedor'),
-    )
+    cuentasProveedores.value = Array.isArray(provData) ? provData : []
     gastos.value = Array.isArray(gastosData) ? gastosData : []
   } catch (err) {
     console.error('Error cargando datos:', err)
@@ -244,7 +244,7 @@ const enviarGasto = async () => {
   }
 
   if (form.value.condicion_pago === 'Cuenta Corriente') {
-    payload.cuenta_proveedor_id = form.value.cuenta_proveedor_id
+    payload.proveedor_id = form.value.proveedor_id
   } else {
     payload.metodo_pago = form.value.metodo_pago
   }

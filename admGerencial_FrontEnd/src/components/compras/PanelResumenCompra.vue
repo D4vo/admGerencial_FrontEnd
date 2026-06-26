@@ -46,14 +46,14 @@
 
       <template v-if="cabecera.condicion_pago === 'Cuenta Corriente'">
         <div class="grupo effecto-aparecer">
-          <label>Cuenta de Proveedor *</label>
-          <select 
-            v-model="cabecera.cuenta_proveedor_id" 
+          <label>Proveedor *</label>
+          <select
+            v-model="cabecera.proveedor_id"
             :class="{'error-borde': errorProveedor}"
           >
             <option value="" disabled>Seleccione un proveedor...</option>
             <option v-for="prov in proveedores" :key="prov.id" :value="prov.id">
-              {{ prov.nombre }}
+              {{ prov.nombre }}{{ prov.cuit ? ` (${prov.cuit})` : '' }}
             </option>
           </select>
           <span v-if="errorProveedor" class="msj-error">Seleccione un proveedor para asignar la deuda</span>
@@ -89,12 +89,12 @@ const props = defineProps({
 
 const emit = defineEmits(['confirmar-compra'])
 
-const cabecera = ref({ 
-  tipo_comprobante: 'Factura A', 
-  nro_comprobante: '', 
+const cabecera = ref({
+  tipo_comprobante: 'Factura A',
+  nro_comprobante: '',
   condicion_pago: 'Al Contado',
   metodo_pago: 'Efectivo',
-  cuenta_proveedor_id: ''
+  proveedor_id: ''
 })
 
 const errorNroComprobante = ref(false)
@@ -103,7 +103,7 @@ const errorProveedor = ref(false)
 const limpiarDependenciasPago = () => {
   errorProveedor.value = false
   if (cabecera.value.condicion_pago === 'Al Contado') {
-    cabecera.value.cuenta_proveedor_id = ''
+    cabecera.value.proveedor_id = ''
     cabecera.value.metodo_pago = 'Efectivo'
   } else {
     cabecera.value.metodo_pago = ''
@@ -120,7 +120,7 @@ const emitirConfirmacion = () => {
     hayErrores = true
   }
 
-  if (cabecera.value.condicion_pago === 'Cuenta Corriente' && !cabecera.value.cuenta_proveedor_id) {
+  if (cabecera.value.condicion_pago === 'Cuenta Corriente' && !cabecera.value.proveedor_id) {
     errorProveedor.value = true
     hayErrores = true
   }
@@ -135,10 +135,8 @@ const emitirConfirmacion = () => {
 
   // 2. Inyectamos llaves dinámicamente para que no existan si no corresponden
   if (cabecera.value.condicion_pago === 'Cuenta Corriente') {
-    // Solo existe si es a deuda, y viaja convertido a número estrictamente
-    payload.cuenta_proveedor_id = Number(cabecera.value.cuenta_proveedor_id)
+    payload.proveedor_id = Number(cabecera.value.proveedor_id)
   } else if (cabecera.value.condicion_pago === 'Al Contado') {
-    // Solo existe si es al contado
     payload.metodo_pago = cabecera.value.metodo_pago
   }
 
@@ -149,12 +147,12 @@ const emitirConfirmacion = () => {
 }
 
 const resetearFormulario = () => {
-  cabecera.value = { 
-    tipo_comprobante: 'Factura A', 
-    nro_comprobante: '', 
+  cabecera.value = {
+    tipo_comprobante: 'Factura A',
+    nro_comprobante: '',
     condicion_pago: 'Al Contado',
     metodo_pago: 'Efectivo',
-    cuenta_proveedor_id: ''
+    proveedor_id: ''
   }
   errorNroComprobante.value = false
   errorProveedor.value = false

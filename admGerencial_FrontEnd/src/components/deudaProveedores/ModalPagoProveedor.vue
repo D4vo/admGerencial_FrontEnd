@@ -8,8 +8,8 @@
 
       <main class="modal-cuerpo" v-if="deuda">
         <div class="info-proveedor">
-          <p><strong>Proveedor:</strong> {{ deuda.proveedor_cuenta }}</p>
-          <p><strong>Código de Cuenta:</strong> {{ deuda.cuenta_codigo }}</p>
+          <p><strong>Proveedor:</strong> {{ deuda.nombre }}</p>
+          <p v-if="deuda.cuit"><strong>CUIT:</strong> {{ deuda.cuit }}</p>
           <p><strong>Saldo Pendiente:</strong> <span class="saldo-resaltado">$ {{ deuda.saldo_pendiente.toFixed(2) }}</span></p>
         </div>
 
@@ -132,7 +132,7 @@ const confirmarPago = () => {
 
   const payload = {
     fecha: new Date().toISOString(),
-    cuenta_proveedor_id: props.deuda.cuenta_id, // Usamos la ID original provista por el objeto
+    proveedor_id: props.deuda.id,
     monto_pagado: Number(form.value.monto_pagado),
     metodo_pago: form.value.metodo_pago,
     observaciones: form.value.observaciones.trim(),

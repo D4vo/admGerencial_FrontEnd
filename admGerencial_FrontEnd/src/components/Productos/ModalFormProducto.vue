@@ -32,6 +32,12 @@
             <input type="number" v-model.number="form.stock" />
           </div>
         </div>
+
+        <div class="grupo">
+          <label>Stock Mínimo (alerta)</label>
+          <input type="number" v-model.number="form.stock_minimo" min="0" placeholder="5" />
+          <span class="hint-stock">Se notificará cuando el stock sea igual o menor a este valor</span>
+        </div>
       </div>
       
       <footer class="modal-footer">
@@ -58,19 +64,14 @@ const emit = defineEmits(['cerrar', 'guardar'])
 
 const esEdicion = computed(() => props.productoOriginal !== null)
 
-const form = ref({ id: null, nombre: '', tipo: '', precio: null, stock: 0 })
+const form = ref({ id: null, nombre: '', tipo: '', precio: null, stock: 0, stock_minimo: 5 })
 
 watch(() => props.visible, (estaVisible) => {
   if (estaVisible) {
     if (props.productoOriginal) {
-      form.value = { ...props.productoOriginal }
-      // Aseguramos de pre-seleccionar la primera categoría si el producto viejo no tenía ninguna
-      if (!form.value.tipo && props.categorias.length > 0) {
-        form.value.tipo = props.categorias[0].nombre
-      }
+      form.value = { stock_minimo: 5, ...props.productoOriginal }
     } else {
-      // Limpiamos el formulario para un producto nuevo
-      form.value = { id: null, nombre: '', tipo: props.categorias.length > 0 ? props.categorias[0].nombre : '', precio: null, stock: 0 }
+      form.value = { id: null, nombre: '', tipo: props.categorias.length > 0 ? props.categorias[0].nombre : '', precio: null, stock: 0, stock_minimo: 5 }
     }
   }
 })
@@ -102,4 +103,5 @@ input:focus, select:focus { border-color: #10b981; }
 .btn-cancelar { padding: 0.75rem 1.5rem; background: white; border: 1px solid #d1d5db; border-radius: 8px; color: #374151; font-weight: 500; cursor: pointer; }
 .btn-guardar { padding: 0.75rem 1.5rem; background: #10b981; border: none; border-radius: 8px; color: white; font-weight: 600; cursor: pointer; }
 .btn-guardar:disabled { background: #9ca3af; cursor: not-allowed; }
+.hint-stock { font-size: 0.75rem; color: #94a3b8; margin-top: 0.3rem; }
 </style>

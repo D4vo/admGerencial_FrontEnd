@@ -34,7 +34,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { productosService } from '../../services/productosService'
-import { cuentasService } from '../../services/cuentasService'
+import { proveedoresService } from '../../services/proveedoresService'
 import { comprasService } from '../../services/comprasService'
 import FormularioItemCompra from './FormularioItemCompra.vue'
 import TablaDetalleCompra from './TablaDetalleCompra.vue'
@@ -50,24 +50,15 @@ const cargando = ref(false)
 const mostrarModal = ref(false) 
 const panelRef = ref(null)
 
-// Llamada centralizada a la API para cargar productos y cuentas
 onMounted(async () => {
   try {
-    // Traemos ambos catálogos en paralelo
-    const [productosData, cuentasData] = await Promise.all([
+    const [productosData, proveedoresData] = await Promise.all([
       productosService.obtenerTodos(),
-      cuentasService.obtenerTodas()
+      proveedoresService.obtenerTodos()
     ])
 
-    // Asignación segura
     productosInventario.value = Array.isArray(productosData) ? productosData : (productosData?.data || [])
-    
-    const todasLasCuentas = Array.isArray(cuentasData) ? cuentasData : (cuentasData?.data || [])
-    
-    // Filtramos para quedarnos solo con cuentas del pasivo que representen proveedores
-    cuentasProveedores.value = todasLasCuentas.filter(cuenta => 
-      cuenta.tipo === 'Pasivo' && cuenta.nombre.toLowerCase().includes('proveedor')
-    )
+    cuentasProveedores.value = Array.isArray(proveedoresData) ? proveedoresData : []
 
   } catch (err) {
     console.error('Error obteniendo datos iniciales:', err)
@@ -103,15 +94,12 @@ const enviarAlBackend = async (datosCabecera) => {
     detalles: detallesFormateados
   }
 
-  // 3. Condicional inteligente basado en la presencia del proveedor (Deuda)
-  if (datosCabecera.cuenta_proveedor_id) {
-    // ESCENARIO A: Es una compra a Crédito (Cuenta Corriente)
-    payload.cuenta_proveedor_id = datosCabecera.cuenta_proveedor_id
-    payload.metodo_pago = null // Explicitamos que no hay desembolso inmediato
+  if (datosCabecera.proveedor_id) {
+    payload.proveedor_id = datosCabecera.proveedor_id
+    payload.metodo_pago = null
   } else {
-    // ESCENARIO B: Es una compra al Contado
     payload.metodo_pago = datosCabecera.metodo_pago
-    payload.cuenta_proveedor_id = null // No está asociado a una cuenta corriente de pasivo
+    payload.proveedor_id = null
   }
  
   try {
