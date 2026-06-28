@@ -35,6 +35,7 @@ const seccionesMenu = [
       { id: 'Libro Diario', label: 'Libro Diario', icono: 'diario' },
       { id: 'Libro Mayor', label: 'Libro Mayor', icono: 'mayor' },
       { id: 'Documentos', label: 'Documentos', icono: 'documentos' },
+      { id: 'Balance', label: 'Balance General', icono: 'balance' },
       { id: 'Cierres', label: 'Cierres Mensuales', icono: 'cierres' },
     ],
   },

@@ -16,6 +16,7 @@ import PantallaConfigCuentas from '../ConfigSistema/PantallaConfigCuentas.vue';
 import PantallaGastos from '../Gastos/PantallaGastos.vue';
 import PantallaProveedores from '../Proveedores/PantallaProveedores.vue';
 import PantallaCierres from '../Cierres/PantallaCierres.vue';
+import PantallaBalance from '../Balance/PantallaBalance.vue';
 import { productosService } from '../../services/productosService';
 
 const mapaPantallas = {
@@ -33,6 +34,7 @@ const mapaPantallas = {
   'Clientes': PantallaClientes,
   'Asiento Manual': PantallaAsientoManual,
   'Config Cuentas': PantallaConfigCuentas,
+  'Balance': PantallaBalance,
   'Cierres': PantallaCierres
 };
 

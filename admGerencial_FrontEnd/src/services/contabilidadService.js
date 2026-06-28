@@ -30,4 +30,9 @@ export const contabilidadService = {
   registrarAsientoManual: async (payload) => {
     return await apiFetch('/contabilidad/asientos-manuales', { method: 'POST', body: JSON.stringify(payload) })
   },
+
+  obtenerBalance: async (fecha = null) => {
+    const url = fecha ? `/contabilidad/balance?fecha=${fecha}` : '/contabilidad/balance'
+    return await apiFetch(url)
+  },
 }
