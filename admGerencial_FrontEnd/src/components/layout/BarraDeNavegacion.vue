@@ -5,6 +5,14 @@ const emit = defineEmits(['navegar'])
 
 const seccionesMenu = [
   {
+    titulo: 'General',
+    icono: 'general',
+    color: '#0f172a',
+    items: [
+      { id: 'Dashboard', label: 'Dashboard', icono: 'dashboard' },
+    ],
+  },
+  {
     titulo: 'Operaciones',
     icono: 'operaciones',
     color: '#10b981',
@@ -34,8 +42,8 @@ const seccionesMenu = [
       { id: 'Asiento Manual', label: 'Asiento Manual', icono: 'asiento' },
       { id: 'Libro Diario', label: 'Libro Diario', icono: 'diario' },
       { id: 'Libro Mayor', label: 'Libro Mayor', icono: 'mayor' },
-      { id: 'Documentos', label: 'Documentos', icono: 'documentos' },
       { id: 'Balance', label: 'Balance General', icono: 'balance' },
+      { id: 'Documentos', label: 'Documentos', icono: 'documentos' },
       { id: 'Cierres', label: 'Cierres Mensuales', icono: 'cierres' },
     ],
   },
@@ -57,10 +65,11 @@ const seccionesMenu = [
   },
 ]
 
-const botonActivo = ref('Ventas')
+const botonActivo = ref('Dashboard')
 
 const seccionesAbiertas = ref({
-  Operaciones: true,
+  General: true,
+  Operaciones: false,
   'Inventario y Terceros': false,
   Contabilidad: false,
   Inicio: false,

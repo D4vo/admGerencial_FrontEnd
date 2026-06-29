@@ -1,5 +1,5 @@
 <script setup>
-import { shallowRef, ref, onMounted } from 'vue';
+import { shallowRef, ref, provide, onMounted } from 'vue';
 import BarraDeNavegacion from '../layout/BarraDeNavegacion.vue';
 import PantallaVentas from '../ventas/PantallaVentas.vue';
 import PantallaCompras from '../compras/PantallaCompras.vue';
@@ -17,9 +17,11 @@ import PantallaGastos from '../Gastos/PantallaGastos.vue';
 import PantallaProveedores from '../Proveedores/PantallaProveedores.vue';
 import PantallaCierres from '../Cierres/PantallaCierres.vue';
 import PantallaBalance from '../Balance/PantallaBalance.vue';
+import PantallaDashboard from '../Dashboard/PantallaDashboard.vue';
 import { productosService } from '../../services/productosService';
 
 const mapaPantallas = {
+  'Dashboard': PantallaDashboard,
   'Ventas': PantallaVentas,
   'Compras': PantallaCompras,
   'Gastos': PantallaGastos,
@@ -38,7 +40,7 @@ const mapaPantallas = {
   'Cierres': PantallaCierres
 };
 
-const pantallaActual = shallowRef(mapaPantallas['Ventas']);
+const pantallaActual = shallowRef(mapaPantallas['Dashboard']);
 const alertasStock = ref([]);
 const panelAlertasAbierto = ref(false);
 
@@ -61,8 +63,9 @@ const irAProductos = () => {
   pantallaActual.value = mapaPantallas['Productos'];
 };
 
+provide('recargarAlertasStock', cargarAlertas);
+
 onMounted(cargarAlertas);
-setInterval(cargarAlertas, 60000);
 </script>
 
 <template>

@@ -32,7 +32,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, inject, onMounted } from 'vue'
 import { productosService } from '../../services/productosService'
 import { proveedoresService } from '../../services/proveedoresService'
 import { comprasService } from '../../services/comprasService'
@@ -40,6 +40,8 @@ import FormularioItemCompra from './FormularioItemCompra.vue'
 import TablaDetalleCompra from './TablaDetalleCompra.vue'
 import PanelResumenCompra from './PanelResumenCompra.vue'
 import ModalExito from '../ModalesGenericos/ModalExito.vue'
+
+const recargarAlertasStock = inject('recargarAlertasStock', () => {})
 
 // Estados
 const productosInventario = ref([])
@@ -107,7 +109,8 @@ const enviarAlBackend = async (datosCabecera) => {
     
     // Llamado real a la API
     await comprasService.crear(payload)
-    
+    recargarAlertasStock()
+
     mostrarModal.value = true
   } catch (error) {
     console.error("Error en la API de compras:", error)

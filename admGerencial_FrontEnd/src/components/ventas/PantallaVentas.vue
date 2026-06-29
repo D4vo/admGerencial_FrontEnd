@@ -132,11 +132,13 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, inject, onMounted } from 'vue'
 import { productosService } from '../../services/productosService'
 import { ventasService } from '../../services/ventasService'
 import ModalCheckout from './ModalCheckout.vue'
 import ModalExito from '../ModalesGenericos/ModalExito.vue'
+
+const recargarAlertasStock = inject('recargarAlertasStock', () => {})
 
 const productosInventario = ref([])
 const cargando = ref(true)
@@ -222,6 +224,7 @@ const procesarVenta = async (datosVenta) => {
     modalCheckoutOpen.value = false
     carrito.value = []
     await cargarDatos()
+    recargarAlertasStock()
     mensajeExito.value = `Venta por $${datosVenta.total.toLocaleString('es-AR')} registrada. Comprobante descargándose.`
     modalExitoOpen.value = true
   } catch (error) {
