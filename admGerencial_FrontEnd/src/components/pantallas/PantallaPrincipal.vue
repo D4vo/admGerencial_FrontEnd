@@ -6,7 +6,6 @@ import PantallaCompras from '../compras/PantallaCompras.vue';
 import PantallaProductos from '../Productos/PantallaProductos.vue';
 import PantallaPlanCuentas from '../Cuentas/PantallaPlanCuentas.vue';
 import PantallaLibroDiario from '../LibroDiario/PantallaLibroDiario.vue';
-import PantallaDeudasProveedores from '../deudaProveedores/PantallaDeudasProveedores.vue';
 import PantallaLibroMayor from '../LibroMayor/PantallaLibroMayor.vue';
 import PantallaInicioActividades from '../InicioActividades/PantallaInicioActividades.vue';
 import PantallaDocumentos from '../Documentos/PantallaDocumentos.vue';
@@ -29,7 +28,7 @@ const mapaPantallas = {
   'Productos': PantallaProductos,
   'Cuentas': PantallaPlanCuentas,
   'Libro Diario': PantallaLibroDiario,
-  'Deudas Proveedores': PantallaDeudasProveedores,
+
   'Libro Mayor': PantallaLibroMayor,
   'Inicio Actividades': PantallaInicioActividades,
   'Documentos': PantallaDocumentos,

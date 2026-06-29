@@ -30,7 +30,6 @@ const seccionesMenu = [
       { id: 'Productos', label: 'Productos', icono: 'productos' },
       { id: 'Clientes', label: 'Clientes', icono: 'clientes' },
       { id: 'Proveedores', label: 'Proveedores', icono: 'proveedores' },
-      { id: 'Deudas Proveedores', label: 'Ctas. a Pagar', icono: 'deudas' },
     ],
   },
   {
