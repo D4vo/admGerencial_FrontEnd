@@ -65,7 +65,7 @@
               <span class="opcion-icono">📦</span>
               <div class="opcion-textos">
                 <span class="opcion-titulo">Ajuste físico</span>
-                <span class="opcion-desc">Devolución / envío de mercadería</span>
+                <span class="opcion-desc">{{ esCredito ? 'Devolución de mercadería' : 'Mercadería adicional' }}</span>
               </div>
             </button>
             <button
@@ -83,16 +83,20 @@
 
         <!-- ========== AJUSTE FÍSICO ========== -->
         <div v-if="tipoAjuste === 'stock'" class="seccion-items effecto-aparecer">
+          <div class="stock-contexto" :class="esCredito ? 'ctx-credito' : 'ctx-debito'">
+            <span class="ctx-icono">{{ esCredito ? '↩' : '↪' }}</span>
+            <span class="ctx-texto">{{ descripcionAjusteFisico }}</span>
+          </div>
           <div class="items-header">
-            <h4>Productos afectados</h4>
-            <button class="btn-atajo" @click="aplicarDevolucionTotal">Devolución total</button>
+            <h4>{{ esCredito ? 'Productos a devolver' : 'Productos adicionales' }}</h4>
+            <button v-if="esCredito" class="btn-atajo" @click="aplicarDevolucionTotal">Devolución total</button>
           </div>
           <table class="tabla-items">
             <thead>
               <tr>
                 <th>Producto</th>
                 <th class="text-center">Cant. original</th>
-                <th class="text-center">Cant. a {{ esCredito ? 'devolver' : 'enviar' }}</th>
+                <th class="text-center">{{ esCredito ? 'Cant. a devolver' : 'Cant. adicional' }}</th>
                 <th class="text-right">{{ labelPrecio }}</th>
                 <th class="text-right">Subtotal</th>
               </tr>
@@ -106,7 +110,7 @@
                     type="number"
                     v-model.number="item.cantidad_devolver"
                     min="0"
-                    :max="item.cantidad"
+                    :max="esCredito ? item.cantidad : 9999"
                     class="input-cant"
                   />
                 </td>
@@ -210,6 +214,17 @@ const esCompra = computed(() => props.documento?.tipo_operacion === 'Compra')
 const esCredito = computed(() => formulario.value.tipoNota === 'Nota de Crédito')
 const labelPrecio = computed(() => (esCompra.value ? 'Costo unit.' : 'Precio unit.'))
 
+const descripcionAjusteFisico = computed(() => {
+  if (esCompra.value) {
+    return esCredito.value
+      ? 'Devolvemos mercadería al proveedor. El stock se reduce y nuestra deuda/pago disminuye.'
+      : 'El proveedor nos envía mercadería adicional. El stock aumenta y nuestra deuda/pago aumenta.'
+  }
+  return esCredito.value
+    ? 'El cliente nos devuelve mercadería. Nuestro stock aumenta y devolvemos dinero al cliente.'
+    : 'Enviamos mercadería adicional al cliente. Nuestro stock disminuye y el cliente nos debe más.'
+})
+
 const hintTipoNota = computed(() => {
   if (esCompra.value) {
     return esCredito.value
@@ -287,9 +302,9 @@ watch(
   },
 )
 
-// Resetear el nuevo valor cuando se cambia el tipo de nota (NC↔ND)
 watch(() => formulario.value.tipoNota, () => {
   nuevoValorCatalogo.value = null
+  itemsAfectados.value.forEach((i) => (i.cantidad_devolver = 0))
 })
 
 const aplicarDevolucionTotal = () =>
@@ -363,10 +378,20 @@ const cerrarModal = () => emit('close')
   max-width: 720px;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
   border: 1px solid #e2e8f0;
-  overflow: hidden;
-  max-height: 95vh;
+  max-height: 90vh;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+}
+
+.modal-cuerpo {
+  padding: 1.5rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  flex: 1;
+  min-height: 0;
 }
 
 .modal-header {
@@ -392,14 +417,6 @@ const cerrarModal = () => emit('close')
   cursor: pointer;
 }
 .btn-cerrar-X:hover { color: #ef4444; }
-
-.modal-cuerpo {
-  padding: 1.5rem;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-}
 
 /* Contexto */
 .bloque-contexto {
@@ -553,6 +570,21 @@ select:focus {
 }
 
 /* Items - Ajuste Físico */
+.stock-contexto {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.65rem 1rem;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  line-height: 1.4;
+  margin-bottom: 0.75rem;
+}
+.ctx-credito { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
+.ctx-debito { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; }
+.ctx-icono { font-size: 1.1rem; flex-shrink: 0; }
+.ctx-texto { font-weight: 500; }
+
 .seccion-items {
   border: 1px solid #e2e8f0;
   border-radius: 10px;
