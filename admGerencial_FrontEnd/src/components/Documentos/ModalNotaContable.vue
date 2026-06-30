@@ -91,34 +91,36 @@
             <h4>{{ esCredito ? 'Productos a devolver' : 'Productos adicionales' }}</h4>
             <button v-if="esCredito" class="btn-atajo" @click="aplicarDevolucionTotal">Devolución total</button>
           </div>
-          <table class="tabla-items">
-            <thead>
-              <tr>
-                <th>Producto</th>
-                <th class="text-center">Cant. original</th>
-                <th class="text-center">{{ esCredito ? 'Cant. a devolver' : 'Cant. adicional' }}</th>
-                <th class="text-right">{{ labelPrecio }}</th>
-                <th class="text-right">Subtotal</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="item in itemsAfectados" :key="item.producto_id">
-                <td>{{ item.nombre }}</td>
-                <td class="text-center text-muted">{{ item.cantidad }}</td>
-                <td class="td-input">
-                  <input
-                    type="number"
-                    v-model.number="item.cantidad_devolver"
-                    min="0"
-                    :max="esCredito ? item.cantidad : 9999"
-                    class="input-cant"
-                  />
-                </td>
-                <td class="text-right text-muted">$ {{ Number(item.precio_unitario).toFixed(2) }}</td>
-                <td class="text-right font-semi">$ {{ (item.cantidad_devolver * item.precio_unitario).toFixed(2) }}</td>
-              </tr>
-            </tbody>
-          </table>
+          <div class="tabla-items-scroll">
+            <table class="tabla-items">
+              <thead>
+                <tr>
+                  <th>Producto</th>
+                  <th class="text-center">Cant. original</th>
+                  <th class="text-center">{{ esCredito ? 'Cant. a devolver' : 'Cant. adicional' }}</th>
+                  <th class="text-right">{{ labelPrecio }}</th>
+                  <th class="text-right">Subtotal</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="item in itemsAfectados" :key="item.producto_id">
+                  <td>{{ item.nombre }}</td>
+                  <td class="text-center text-muted">{{ item.cantidad }}</td>
+                  <td class="td-input">
+                    <input
+                      type="number"
+                      v-model.number="item.cantidad_devolver"
+                      min="0"
+                      :max="esCredito ? item.cantidad : 9999"
+                      class="input-cant"
+                    />
+                  </td>
+                  <td class="text-right text-muted">$ {{ Number(item.precio_unitario).toFixed(2) }}</td>
+                  <td class="text-right font-semi">$ {{ (item.cantidad_devolver * item.precio_unitario).toFixed(2) }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
 
         <!-- ========== AJUSTE FINANCIERO ========== -->
@@ -379,6 +381,7 @@ const cerrarModal = () => emit('close')
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
   border: 1px solid #e2e8f0;
   max-height: 90vh;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -589,6 +592,12 @@ select:focus {
   border: 1px solid #e2e8f0;
   border-radius: 10px;
   overflow: hidden;
+  flex-shrink: 0;
+}
+
+.tabla-items-scroll {
+  max-height: 280px;
+  overflow-y: auto;
 }
 
 .items-header {

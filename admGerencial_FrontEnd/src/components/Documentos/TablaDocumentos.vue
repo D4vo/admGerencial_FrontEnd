@@ -53,6 +53,14 @@
               >
                 {{ doc.tipo_operacion === 'Compra' ? 'Registrar Nota' : 'Emitir Nota' }}
               </button>
+              <button
+                v-if="puedeImprimirNota(doc)"
+                class="btn-accion"
+                :disabled="imprimiendo === doc.id"
+                @click="imprimirNota(doc)"
+              >
+                {{ imprimiendo === doc.id ? 'Generando...' : 'Imprimir' }}
+              </button>
             </td>
           </tr>
 
@@ -156,15 +164,51 @@
                   </div>
                 </template>
 
-                <!-- ===== PAGO O SIN DETALLE ===== -->
-                <template v-else>
-                  <div class="detalle-vacio">
-                    <span>{{ doc.tipo_operacion === 'Pago' ? 'Pago registrado contra cuenta de proveedor.' : 'Documento sin detalle de productos.' }}</span>
+                <!-- ===== DETALLE DE PAGO ===== -->
+                <template v-else-if="doc.tipo_operacion === 'Pago'">
+                  <div class="detalle-pago">
+                    <h4>Detalle del pago</h4>
+                    <div class="info-pago">
+                      <div class="info-fila">
+                        <span class="info-label">Proveedor:</span>
+                        <span>{{ doc.entidad_nombre || '-' }}{{ doc.proveedor_cuit ? ` (CUIT ${doc.proveedor_cuit})` : '' }}</span>
+                      </div>
+                      <div class="info-fila">
+                        <span class="info-label">Monto pagado:</span>
+                        <span class="font-semi">$ {{ Number(doc.pago_monto ?? doc.total).toLocaleString('es-AR', { minimumFractionDigits: 2 }) }}</span>
+                      </div>
+                      <div class="info-fila" v-if="doc.pago_metodo_pago">
+                        <span class="info-label">Método de pago:</span>
+                        <span>{{ doc.pago_metodo_pago }}</span>
+                      </div>
+                      <div class="info-fila">
+                        <span class="info-label">Comprobante recibido:</span>
+                        <span>{{ doc.tipo_comprobante }} N° {{ doc.nro_comprobante }}</span>
+                      </div>
+                      <div class="info-fila" v-if="doc.pago_observaciones">
+                        <span class="info-label">Observaciones:</span>
+                        <span>{{ doc.pago_observaciones }}</span>
+                      </div>
+                      <div class="info-fila" v-if="doc.pago_asiento_id">
+                        <span class="info-label">Asiento contable:</span>
+                        <span>N° {{ doc.pago_asiento_id }}</span>
+                      </div>
+                      <div class="info-fila info-fila-nota" v-if="!doc.padre_info">
+                        <span>Pago aplicado al saldo general de cuenta corriente del proveedor (no está asociado a una factura puntual).</span>
+                      </div>
+                    </div>
                   </div>
                 </template>
 
-                <!-- Info del proveedor si existe -->
-                <div v-if="doc.proveedor_nombre" class="info-proveedor-detalle">
+                <!-- ===== SIN DETALLE ===== -->
+                <template v-else>
+                  <div class="detalle-vacio">
+                    <span>Documento sin detalle de productos.</span>
+                  </div>
+                </template>
+
+                <!-- Info del proveedor si existe (compras/gastos) -->
+                <div v-if="doc.proveedor_nombre && doc.tipo_operacion !== 'Pago'" class="info-proveedor-detalle">
                   <span class="info-label">Proveedor:</span>
                   <span>{{ doc.proveedor_nombre }}</span>
                 </div>
@@ -183,6 +227,7 @@
 
 <script setup>
 import { ref } from 'vue'
+import { documentosService } from '../../services/documentosService'
 
 defineProps({
   documentos: { type: Array, required: true },
@@ -190,6 +235,7 @@ defineProps({
 
 const emit = defineEmits(['generarNota'])
 const expandido = ref(null)
+const imprimiendo = ref(null)
 
 const toggleExpandir = (doc) => {
   if (!tieneDetalle(doc)) return
@@ -218,6 +264,22 @@ const puedeGenerarNota = (doc) => {
     (doc.tipo_operacion === 'Venta' || doc.tipo_operacion === 'Compra') &&
     !esNota(doc)
   )
+}
+
+const puedeImprimirNota = (doc) => {
+  return esNota(doc) && doc.padre_info && doc.padre_info.tipo_operacion === 'Venta'
+}
+
+const imprimirNota = async (doc) => {
+  try {
+    imprimiendo.value = doc.id
+    await documentosService.descargarNota(doc.id)
+  } catch (error) {
+    console.error('Error al descargar la nota:', error)
+    alert('No se pudo generar el PDF de la nota.')
+  } finally {
+    imprimiendo.value = null
+  }
 }
 
 const badgeClass = (doc) => {
@@ -357,6 +419,7 @@ tbody td {
 
 .detalle-items h4,
 .detalle-gasto h4,
+.detalle-pago h4,
 .detalle-nota h4 {
   margin: 0 0 0.75rem 0;
   font-size: 0.85rem;
@@ -401,6 +464,18 @@ tbody td {
 
 .info-fila { display: flex; gap: 0.5rem; font-size: 0.88rem; color: #334155; }
 .info-label { font-weight: 600; color: #64748b; min-width: 130px; flex-shrink: 0; }
+
+/* Detalle pago */
+.info-pago {
+  background: #f5f3ff;
+  border: 1px solid #ede9fe;
+  border-radius: 8px;
+  padding: 0.85rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.info-fila-nota { color: #94a3b8; font-size: 0.8rem; font-style: italic; padding-top: 0.35rem; border-top: 1px dashed #ddd6fe; margin-top: 0.25rem; }
 
 .info-proveedor-detalle {
   margin-top: 0.75rem;

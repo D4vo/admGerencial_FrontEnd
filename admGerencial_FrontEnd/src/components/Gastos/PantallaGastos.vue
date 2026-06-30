@@ -439,10 +439,12 @@ select:focus {
   display: flex;
   gap: 0.5rem;
   align-items: center;
+  min-width: 0;
 }
 
 .fila-proveedor select {
   flex: 1;
+  min-width: 0;
 }
 
 .btn-nuevo-prov {

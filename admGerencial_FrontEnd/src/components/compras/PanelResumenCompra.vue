@@ -162,8 +162,8 @@ input, select {
 input:focus, select:focus { border-color: #10b981; background-color: #ffffff; box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1); }
 .error-borde { border-color: #ef4444 !important; background-color: #fef2f2 !important; }
 .msj-error { color: #ef4444; font-size: 0.75rem; margin-top: 0.4rem; font-weight: 500; }
-.fila-proveedor { display: flex; gap: 0.5rem; align-items: center; }
-.fila-proveedor select { flex: 1; }
+.fila-proveedor { display: flex; gap: 0.5rem; align-items: center; min-width: 0; }
+.fila-proveedor select { flex: 1; min-width: 0; }
 .btn-nuevo-prov { white-space: nowrap; padding: 0.65rem 0.9rem; background: #eef2ff; color: #4338ca; border: 1px solid #c7d2fe; border-radius: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: background 0.15s; }
 .btn-nuevo-prov:hover { background: #e0e7ff; }
 .divisor { border: 0; border-top: 1px dashed #e5e7eb; margin: 1.5rem 0; }
