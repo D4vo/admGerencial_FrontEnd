@@ -14,19 +14,26 @@
       <div class="col-lateral">
         <PanelResumenCompra
           ref="panelRef"
-          :total="totalCompra" 
+          :total="totalCompra"
           :cargando="cargando"
           :proveedores="cuentasProveedores"
-          @confirmar-compra="enviarAlBackend" 
+          @confirmar-compra="enviarAlBackend"
+          @nuevo-proveedor="mostrarModalProveedor = true"
         />
       </div>
     </div>
 
-    <ModalExito 
-      :show="mostrarModal" 
+    <ModalExito
+      :show="mostrarModal"
       titulo="¡Compra Registrada!"
       mensaje="El stock y los libros contables han sido actualizados."
       @close="cerrarModalYLimpiar"
+    />
+
+    <ModalFormProveedor
+      :show="mostrarModalProveedor"
+      @close="mostrarModalProveedor = false"
+      @guardar="crearProveedorInline"
     />
   </div>
 </template>
@@ -40,6 +47,7 @@ import FormularioItemCompra from './FormularioItemCompra.vue'
 import TablaDetalleCompra from './TablaDetalleCompra.vue'
 import PanelResumenCompra from './PanelResumenCompra.vue'
 import ModalExito from '../ModalesGenericos/ModalExito.vue'
+import ModalFormProveedor from '../Proveedores/ModalFormProveedor.vue'
 
 const recargarAlertasStock = inject('recargarAlertasStock', () => {})
 
@@ -49,7 +57,8 @@ const cuentasProveedores = ref([]) // Nuevo estado para los proveedores
 const errorCarga = ref(null)
 const detallesCompra = ref([])
 const cargando = ref(false)
-const mostrarModal = ref(false) 
+const mostrarModal = ref(false)
+const mostrarModalProveedor = ref(false)
 const panelRef = ref(null)
 
 onMounted(async () => {
@@ -87,26 +96,18 @@ const enviarAlBackend = async (datosCabecera) => {
     costo_unitario: item.costo_unitario
   }))
 
-  // 2. Base del payload con los datos obligatorios que siempre viajan
+  // 2. Payload con los datos obligatorios que siempre viajan
   const payload = {
     fecha: new Date().toISOString().split('T')[0],
     tipo_comprobante: datosCabecera.tipo_comprobante,
-    nro_comprobante: datosCabecera.nro_comprobante, // <-- Ahora el número siempre viaja
+    nro_comprobante: datosCabecera.nro_comprobante,
     total: totalCompra.value,
-    detalles: detallesFormateados
+    detalles: detallesFormateados,
+    metodo_pago: datosCabecera.metodo_pago,
+    proveedor_id: datosCabecera.proveedor_id || null,
   }
 
-  if (datosCabecera.proveedor_id) {
-    payload.proveedor_id = datosCabecera.proveedor_id
-    payload.metodo_pago = null
-  } else {
-    payload.metodo_pago = datosCabecera.metodo_pago
-    payload.proveedor_id = null
-  }
- 
   try {
-    console.log("📦 ENVIANDO COMPRA AL BACKEND:", JSON.stringify(payload, null, 2))
-    
     // Llamado real a la API
     await comprasService.crear(payload)
     recargarAlertasStock()
@@ -117,6 +118,19 @@ const enviarAlBackend = async (datosCabecera) => {
     alert('Hubo un error al registrar la compra en el servidor.')
   } finally {
     cargando.value = false
+  }
+}
+
+const crearProveedorInline = async (payload) => {
+  try {
+    const nuevo = await proveedoresService.crear(payload)
+    cuentasProveedores.value.push(nuevo)
+    mostrarModalProveedor.value = false
+    if (panelRef.value) {
+      panelRef.value.seleccionarProveedor(nuevo.id)
+    }
+  } catch (err) {
+    alert('Error al crear el proveedor: ' + err.message)
   }
 }
 

@@ -7,11 +7,13 @@
           <th>Razón Social / Nombre</th>
           <th>Condición IVA</th>
           <th>Domicilio Fiscal</th>
+          <th>Teléfono</th>
+          <th>Estado</th>
           <th class="col-accion">Acciones</th>
         </tr>
       </thead>
       <tbody>
-        <tr v-for="(cliente, index) in clientes" :key="index">
+        <tr v-for="(cliente, index) in clientes" :key="index" :class="{ 'fila-inactiva': cliente.activo === false }">
           <td class="font-mono">{{ cliente.cuit }}</td>
           <td class="font-bold">{{ cliente.razon_social }}</td>
           <td>
@@ -20,13 +22,23 @@
             </span>
           </td>
           <td class="texto-muted">{{ cliente.domicilio_fiscal || '---' }}</td>
+          <td class="texto-muted">{{ cliente.telefono || '---' }}</td>
+          <td>
+            <span class="badge-estado" :class="cliente.activo === false ? 'badge-inactivo' : 'badge-activo'">
+              {{ cliente.activo === false ? 'Inactivo' : 'Activo' }}
+            </span>
+          </td>
           <td class="col-accion">
             <span v-if="cliente.cuit === '00000000000'" class="badge-sistema">Sistema</span>
-            <button v-else class="btn-editar" title="Editar en el futuro">✏️</button>
+            <template v-else>
+              <button class="btn-edit" @click="emit('editar', cliente)">Editar</button>
+              <button v-if="cliente.activo === false" class="btn-reactivar" @click="emit('cambiar-estado', cliente)">Reactivar</button>
+              <button v-else class="btn-baja" @click="emit('cambiar-estado', cliente)">Dar de baja</button>
+            </template>
           </td>
         </tr>
         <tr v-if="clientes.length === 0">
-          <td colspan="5" class="sin-datos">No hay clientes registrados en el sistema.</td>
+          <td colspan="7" class="sin-datos">No hay clientes registrados en el sistema.</td>
         </tr>
       </tbody>
     </table>
@@ -37,6 +49,8 @@
 defineProps({
   clientes: { type: Array, required: true }
 });
+
+const emit = defineEmits(['cambiar-estado', 'editar']);
 
 const claseBadge = (condicion) => {
   switch(condicion) {
@@ -67,7 +81,16 @@ tr:hover td { background-color: #f8fafc; }
 .badge-cf { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
 
 .badge-sistema { background: #e2e8f0; color: #64748b; font-size: 0.7rem; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: 700; text-transform: uppercase; }
-.btn-editar { background: none; border: none; cursor: pointer; opacity: 0.5; transition: opacity 0.2s; font-size: 1.1rem; }
-.btn-editar:hover { opacity: 1; }
 .sin-datos { text-align: center; padding: 3rem; color: #94a3b8; font-style: italic; }
+
+.fila-inactiva td { opacity: 0.6; }
+.badge-estado { padding: 0.25rem 0.6rem; border-radius: 6px; font-size: 0.75rem; font-weight: 700; }
+.badge-activo { background: #dcfce7; color: #166534; }
+.badge-inactivo { background: #f1f5f9; color: #64748b; }
+.btn-edit { background: #f3f4f6; color: #374151; border: 1px solid #e5e7eb; border-radius: 6px; padding: 0.35rem 0.75rem; font-size: 0.8rem; font-weight: 600; cursor: pointer; margin-right: 0.4rem; }
+.btn-edit:hover { background: #e5e7eb; }
+.btn-baja { background: #fff1f2; color: #be123c; border: 1px solid #fecdd3; border-radius: 6px; padding: 0.35rem 0.75rem; font-size: 0.8rem; font-weight: 600; cursor: pointer; }
+.btn-baja:hover { background: #ffe4e6; }
+.btn-reactivar { background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; border-radius: 6px; padding: 0.35rem 0.75rem; font-size: 0.8rem; font-weight: 600; cursor: pointer; }
+.btn-reactivar:hover { background: #d1fae5; }
 </style>

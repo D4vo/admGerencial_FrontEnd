@@ -5,26 +5,37 @@
         <h1>Gestión de Clientes</h1>
         <p class="subtitulo">Directorio de entidades para facturación y cuentas corrientes</p>
       </div>
-      <button class="btn-nuevo" @click="mostrarModalForm = true">+ Nuevo Cliente</button>
+      <button class="btn-nuevo" @click="abrirModalNuevo">+ Nuevo Cliente</button>
     </header>
 
     <div v-if="cargando" class="estado-mensaje">Cargando directorio...</div>
     
     <div v-else class="layout-contenido">
-      <TablaClientes :clientes="listaClientes" />
+      <TablaClientes :clientes="listaClientes" @cambiar-estado="cambiarEstadoCliente" @editar="abrirModalEditar" />
     </div>
 
-    <ModalFormCliente 
+    <ModalFormCliente
       :show="mostrarModalForm"
+      :cliente="clienteEditando"
       @close="mostrarModalForm = false"
-      @guardar="procesarNuevoCliente"
+      @guardar="procesarGuardadoCliente"
     />
 
-    <ModalExito 
-      :show="mostrarExito" 
-      titulo="¡Cliente Registrado!"
-      mensaje="La entidad fue añadida correctamente al directorio del sistema."
+    <ModalExito
+      :show="mostrarExito"
+      :titulo="tituloExito"
+      :mensaje="mensajeExito"
       @close="mostrarExito = false"
+    />
+
+    <ModalConfirmacion
+      :show="mostrarConfirmacion"
+      :titulo="confirmacion.titulo"
+      :mensaje="confirmacion.mensaje"
+      :variante="confirmacion.variante"
+      :texto-confirmar="confirmacion.textoConfirmar"
+      @confirm="ejecutarConfirmacion"
+      @cancel="mostrarConfirmacion = false"
     />
   </div>
 </template>
@@ -34,6 +45,7 @@ import { ref, onMounted } from 'vue';
 import TablaClientes from './TablaClientes.vue';
 import ModalFormCliente from './ModalFormCliente.vue';
 import ModalExito from '../ModalesGenericos/ModalExito.vue';
+import ModalConfirmacion from '../ModalesGenericos/ModalConfirmacion.vue';
 import { clientesService } from '../../services/clientesService'; // Importamos el servicio real de la API
 
 // ==========================================
@@ -43,6 +55,11 @@ const listaClientes = ref([]);
 const cargando = ref(true);
 const mostrarModalForm = ref(false);
 const mostrarExito = ref(false);
+const mostrarConfirmacion = ref(false);
+const confirmacion = ref({ titulo: '', mensaje: '', variante: 'default', textoConfirmar: 'Confirmar', accion: null });
+const clienteEditando = ref(null);
+const tituloExito = ref('¡Cliente Registrado!');
+const mensajeExito = ref('La entidad fue añadida correctamente al directorio del sistema.');
 
 // ==========================================
 // FUNCIÓN DE CARGA (GET)
@@ -50,7 +67,8 @@ const mostrarExito = ref(false);
 const traerDirectorioClientes = async () => {
   try {
     cargando.value = true;
-    const datos = await clientesService.obtenerClientes();
+    // Pantalla de mantenimiento: trae también los inactivos para poder reactivarlos
+    const datos = await clientesService.obtenerClientes(true);
     listaClientes.value = datos;
   } catch (error) {
     console.error("Error al conectar con el endpoint GET /clientes/:", error);
@@ -60,22 +78,54 @@ const traerDirectorioClientes = async () => {
   }
 };
 
+const cambiarEstadoCliente = (cliente) => {
+  const activo = !cliente.activo;
+  confirmacion.value = {
+    titulo: activo ? 'Reactivar cliente' : 'Dar de baja cliente',
+    mensaje: `¿Seguro que querés ${activo ? 'reactivar' : 'dar de baja a'} "${cliente.razon_social}"?`,
+    variante: activo ? 'default' : 'peligro',
+    textoConfirmar: activo ? 'Reactivar' : 'Dar de baja',
+    accion: async () => {
+      try {
+        await clientesService.cambiarEstado(cliente.cuit, activo);
+        await traerDirectorioClientes();
+      } catch (error) {
+        console.error("Error al cambiar el estado del cliente:", error);
+        alert("No se pudo actualizar el estado del cliente.");
+      }
+    },
+  };
+  mostrarConfirmacion.value = true;
+};
+
+const ejecutarConfirmacion = async () => {
+  mostrarConfirmacion.value = false;
+  if (confirmacion.value.accion) await confirmacion.value.accion();
+};
+
 // Disparamos la carga real apenas se monta la pantalla en el Kiosco
 onMounted(traerDirectorioClientes);
 
+const abrirModalNuevo = () => { clienteEditando.value = null; mostrarModalForm.value = true; };
+const abrirModalEditar = (cliente) => { clienteEditando.value = cliente; mostrarModalForm.value = true; };
+
 // ==========================================
-// PROCESAMIENTO DE GUARDADO (POST)
+// PROCESAMIENTO DE GUARDADO (POST / PUT)
 // ==========================================
-const procesarNuevoCliente = async (payloadCliente) => {
-  console.log("🚀 ENVIANDO EN TIEMPO REAL A POST /clientes/:", JSON.stringify(payloadCliente, null, 2));
-  
+const procesarGuardadoCliente = async (payloadCliente) => {
   try {
     cargando.value = true;
-    
-    // Petición HTTP sincrónica hacia la API de Python
-    await clientesService.crearCliente(payloadCliente);
-    
-    // Si impactó bien en la base de datos, cerramos el formulario y levantamos el modal premium de éxito
+
+    if (clienteEditando.value) {
+      await clientesService.actualizarCliente(clienteEditando.value.cuit, payloadCliente);
+      tituloExito.value = '¡Cliente Actualizado!';
+      mensajeExito.value = 'Los datos del cliente fueron actualizados correctamente.';
+    } else {
+      await clientesService.crearCliente(payloadCliente);
+      tituloExito.value = '¡Cliente Registrado!';
+      mensajeExito.value = 'La entidad fue añadida correctamente al directorio del sistema.';
+    }
+
     mostrarModalForm.value = false;
     mostrarExito.value = true;
 
@@ -83,8 +133,10 @@ const procesarNuevoCliente = async (payloadCliente) => {
     await traerDirectorioClientes();
 
   } catch (error) {
-    console.error("Error al registrar el cliente en el backend:", error);
-    alert("El servidor rechazó el registro. Verifique que el CUIT no esté duplicado.");
+    console.error("Error al guardar el cliente en el backend:", error);
+    alert(clienteEditando.value
+      ? "No se pudo actualizar el cliente."
+      : "El servidor rechazó el registro. Verifique que el CUIT no esté duplicado.");
   } finally {
     cargando.value = false;
   }

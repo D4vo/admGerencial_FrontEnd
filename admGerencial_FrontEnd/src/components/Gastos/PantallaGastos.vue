@@ -79,34 +79,26 @@
           <hr class="divisor-suave" />
 
           <div class="grupo">
-            <label>Condición de Pago *</label>
-            <select v-model="form.condicion_pago" @change="limpiarPago">
-              <option value="Al Contado">Al Contado (Pago inmediato)</option>
-              <option value="Cuenta Corriente">A Cuenta Corriente (Deuda)</option>
+            <label>Método de Pago *</label>
+            <select v-model="form.metodo_pago">
+              <option value="Efectivo">Efectivo (Cuenta Caja)</option>
+              <option value="Transferencia">Transferencia (Cuenta Banco)</option>
+              <option value="Cuenta Corriente">Cuenta Corriente (Deuda a proveedor)</option>
             </select>
           </div>
 
-          <template v-if="form.condicion_pago === 'Al Contado'">
-            <div class="grupo effecto-aparecer">
-              <label>Método de Pago</label>
-              <select v-model="form.metodo_pago">
-                <option value="Efectivo">Efectivo (Cuenta Caja)</option>
-                <option value="Transferencia">Transferencia (Cuenta Banco)</option>
-              </select>
-            </div>
-          </template>
-
-          <template v-if="form.condicion_pago === 'Cuenta Corriente'">
-            <div class="grupo effecto-aparecer">
-              <label>Proveedor *</label>
-              <select v-model.number="form.proveedor_id">
-                <option :value="null" disabled>Seleccione un proveedor...</option>
+          <div class="grupo">
+            <label>Proveedor {{ form.metodo_pago === 'Cuenta Corriente' ? '*' : '(opcional, para seguimiento)' }}</label>
+            <div class="fila-proveedor">
+              <select v-model="form.proveedor_id">
+                <option :value="null">Sin proveedor asignado</option>
                 <option v-for="prov in cuentasProveedores" :key="prov.id" :value="prov.id">
                   {{ prov.nombre }}{{ prov.cuit ? ` (${prov.cuit})` : '' }}
                 </option>
               </select>
+              <button type="button" class="btn-nuevo-prov" @click="mostrarModalProveedor = true">+ Nuevo</button>
             </div>
-          </template>
+          </div>
         </div>
 
         <button
@@ -154,12 +146,19 @@
       mensaje="El asiento contable fue generado automáticamente."
       @close="mostrarExito = false"
     />
+
+    <ModalFormProveedor
+      :show="mostrarModalProveedor"
+      @close="mostrarModalProveedor = false"
+      @guardar="crearProveedorInline"
+    />
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import ModalExito from '../ModalesGenericos/ModalExito.vue'
+import ModalFormProveedor from '../Proveedores/ModalFormProveedor.vue'
 import { gastosService } from '../../services/gastosService'
 import { cuentasService } from '../../services/cuentasService'
 import { proveedoresService } from '../../services/proveedoresService'
@@ -172,6 +171,7 @@ const gastos = ref([])
 const cargandoHistorial = ref(true)
 const enviando = ref(false)
 const mostrarExito = ref(false)
+const mostrarModalProveedor = ref(false)
 
 const formInicial = () => ({
   fecha: new Date().toISOString().split('T')[0],
@@ -180,7 +180,6 @@ const formInicial = () => ({
   monto: null,
   tipo_comprobante: 'Factura A',
   nro_comprobante: '',
-  condicion_pago: 'Al Contado',
   metodo_pago: 'Efectivo',
   proveedor_id: null,
 })
@@ -199,16 +198,18 @@ const formularioValido = computed(() => {
   const f = form.value
   if (!f.fecha || !f.descripcion.trim() || !f.cuenta_debe_id || !f.monto || f.monto <= 0) return false
   if (!f.tipo_comprobante) return false
-  if (f.condicion_pago === 'Cuenta Corriente' && !f.proveedor_id) return false
+  if (f.metodo_pago === 'Cuenta Corriente' && !f.proveedor_id) return false
   return true
 })
 
-const limpiarPago = () => {
-  if (form.value.condicion_pago === 'Al Contado') {
-    form.value.proveedor_id = null
-    form.value.metodo_pago = 'Efectivo'
-  } else {
-    form.value.metodo_pago = null
+const crearProveedorInline = async (payload) => {
+  try {
+    const nuevo = await proveedoresService.crear(payload)
+    cuentasProveedores.value.push(nuevo)
+    form.value.proveedor_id = nuevo.id
+    mostrarModalProveedor.value = false
+  } catch (err) {
+    alert('Error al crear el proveedor: ' + err.message)
   }
 }
 
@@ -241,12 +242,8 @@ const enviarGasto = async () => {
     monto: form.value.monto,
     tipo_comprobante: form.value.tipo_comprobante,
     nro_comprobante: form.value.nro_comprobante.trim() || 'S/N',
-  }
-
-  if (form.value.condicion_pago === 'Cuenta Corriente') {
-    payload.proveedor_id = form.value.proveedor_id
-  } else {
-    payload.metodo_pago = form.value.metodo_pago
+    metodo_pago: form.value.metodo_pago,
+    proveedor_id: form.value.proveedor_id || null,
   }
 
   try {
@@ -436,6 +433,33 @@ select:focus {
   text-align: right;
   font-weight: 600;
   white-space: nowrap;
+}
+
+.fila-proveedor {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.fila-proveedor select {
+  flex: 1;
+}
+
+.btn-nuevo-prov {
+  white-space: nowrap;
+  padding: 0.6rem 0.9rem;
+  background: #eef2ff;
+  color: #4338ca;
+  border: 1px solid #c7d2fe;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-nuevo-prov:hover {
+  background: #e0e7ff;
 }
 
 .effecto-aparecer {

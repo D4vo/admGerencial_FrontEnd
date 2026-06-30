@@ -27,38 +27,31 @@
       <hr class="divisor-suave" />
 
       <div class="grupo">
-        <label>Condición de Pago *</label>
-        <select v-model="cabecera.condicion_pago" @change="limpiarDependenciasPago">
-          <option value="Al Contado">Al Contado (Pago inmediato)</option>
-          <option value="Cuenta Corriente">A Cuenta Corriente (Deuda)</option>
+        <label>Método de Pago *</label>
+        <select v-model="cabecera.metodo_pago">
+          <option value="Efectivo">Efectivo (Cuenta Caja)</option>
+          <option value="Transferencia">Transferencia (Cuenta Banco)</option>
+          <option value="Tarjeta">Tarjeta (Cuenta Banco)</option>
+          <option value="Cuenta Corriente">Cuenta Corriente (Deuda a proveedor)</option>
         </select>
       </div>
 
-      <template v-if="cabecera.condicion_pago === 'Al Contado'">
-        <div class="grupo effecto-aparecer">
-          <label>Método de Pago</label>
-          <select v-model="cabecera.metodo_pago">
-            <option value="Efectivo">Efectivo (Cuenta Caja)</option>
-            <option value="Transferencia">Transferencia (Cuenta Banco)</option>
-          </select>
-        </div>
-      </template>
-
-      <template v-if="cabecera.condicion_pago === 'Cuenta Corriente'">
-        <div class="grupo effecto-aparecer">
-          <label>Proveedor *</label>
+      <div class="grupo">
+        <label>Proveedor {{ cabecera.metodo_pago === 'Cuenta Corriente' ? '*' : '(opcional, para seguimiento)' }}</label>
+        <div class="fila-proveedor">
           <select
             v-model="cabecera.proveedor_id"
             :class="{'error-borde': errorProveedor}"
           >
-            <option value="" disabled>Seleccione un proveedor...</option>
+            <option value="">Sin proveedor asignado</option>
             <option v-for="prov in proveedores" :key="prov.id" :value="prov.id">
               {{ prov.nombre }}{{ prov.cuit ? ` (${prov.cuit})` : '' }}
             </option>
           </select>
-          <span v-if="errorProveedor" class="msj-error">Seleccione un proveedor para asignar la deuda</span>
+          <button type="button" class="btn-nuevo-prov" @click="emit('nuevo-proveedor')">+ Nuevo</button>
         </div>
-      </template>
+        <span v-if="errorProveedor" class="msj-error">Seleccione un proveedor para asignar la deuda</span>
+      </div>
     </div>
 
     <hr class="divisor" />
@@ -87,28 +80,17 @@ const props = defineProps({
   proveedores: { type: Array, default: () => [] }
 })
 
-const emit = defineEmits(['confirmar-compra'])
+const emit = defineEmits(['confirmar-compra', 'nuevo-proveedor'])
 
 const cabecera = ref({
   tipo_comprobante: 'Factura A',
   nro_comprobante: '',
-  condicion_pago: 'Al Contado',
   metodo_pago: 'Efectivo',
   proveedor_id: ''
 })
 
 const errorNroComprobante = ref(false)
 const errorProveedor = ref(false)
-
-const limpiarDependenciasPago = () => {
-  errorProveedor.value = false
-  if (cabecera.value.condicion_pago === 'Al Contado') {
-    cabecera.value.proveedor_id = ''
-    cabecera.value.metodo_pago = 'Efectivo'
-  } else {
-    cabecera.value.metodo_pago = ''
-  }
-}
 
 const emitirConfirmacion = () => {
   errorNroComprobante.value = false
@@ -120,28 +102,19 @@ const emitirConfirmacion = () => {
     hayErrores = true
   }
 
-  if (cabecera.value.condicion_pago === 'Cuenta Corriente' && !cabecera.value.proveedor_id) {
+  if (cabecera.value.metodo_pago === 'Cuenta Corriente' && !cabecera.value.proveedor_id) {
     errorProveedor.value = true
     hayErrores = true
   }
 
   if (hayErrores) return
 
-  // 1. Armamos la base estricta que siempre viaja
   const payload = {
     tipo_comprobante: cabecera.value.tipo_comprobante,
-    nro_comprobante: cabecera.value.nro_comprobante.trim()
+    nro_comprobante: cabecera.value.nro_comprobante.trim(),
+    metodo_pago: cabecera.value.metodo_pago,
+    proveedor_id: cabecera.value.proveedor_id ? Number(cabecera.value.proveedor_id) : null,
   }
-
-  // 2. Inyectamos llaves dinámicamente para que no existan si no corresponden
-  if (cabecera.value.condicion_pago === 'Cuenta Corriente') {
-    payload.proveedor_id = Number(cabecera.value.proveedor_id)
-  } else if (cabecera.value.condicion_pago === 'Al Contado') {
-    payload.metodo_pago = cabecera.value.metodo_pago
-  }
-
-  // LOG PARA COMPROBAR LA ESTRUCTURA EN CONSOLA
-  console.log("🚀 ESTRUCTURA QUE SALE DEL PANEL:", JSON.stringify(payload, null, 2))
 
   emit('confirmar-compra', payload)
 }
@@ -150,7 +123,6 @@ const resetearFormulario = () => {
   cabecera.value = {
     tipo_comprobante: 'Factura A',
     nro_comprobante: '',
-    condicion_pago: 'Al Contado',
     metodo_pago: 'Efectivo',
     proveedor_id: ''
   }
@@ -158,7 +130,11 @@ const resetearFormulario = () => {
   errorProveedor.value = false
 }
 
-defineExpose({ resetearFormulario })
+const seleccionarProveedor = (id) => {
+  cabecera.value.proveedor_id = id
+}
+
+defineExpose({ resetearFormulario, seleccionarProveedor })
 </script>
 
 <style scoped>
@@ -186,6 +162,10 @@ input, select {
 input:focus, select:focus { border-color: #10b981; background-color: #ffffff; box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1); }
 .error-borde { border-color: #ef4444 !important; background-color: #fef2f2 !important; }
 .msj-error { color: #ef4444; font-size: 0.75rem; margin-top: 0.4rem; font-weight: 500; }
+.fila-proveedor { display: flex; gap: 0.5rem; align-items: center; }
+.fila-proveedor select { flex: 1; }
+.btn-nuevo-prov { white-space: nowrap; padding: 0.65rem 0.9rem; background: #eef2ff; color: #4338ca; border: 1px solid #c7d2fe; border-radius: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: background 0.15s; }
+.btn-nuevo-prov:hover { background: #e0e7ff; }
 .divisor { border: 0; border-top: 1px dashed #e5e7eb; margin: 1.5rem 0; }
 .divisor-suave { border: 0; border-top: 1px solid #f3f4f6; margin: 0.5rem 0; }
 .total-fila { display: flex; flex-direction: column; gap: 0.25rem; margin-bottom: 2rem; }

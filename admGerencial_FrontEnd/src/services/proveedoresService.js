@@ -1,9 +1,10 @@
 import { apiFetch } from './api'
 
 export const proveedoresService = {
-  // Maestro de proveedores
-  obtenerTodos: async () => {
-    return await apiFetch('/proveedores/maestro/')
+  // Maestro de proveedores (por defecto, solo activos)
+  obtenerTodos: async (incluirInactivos = false) => {
+    const query = incluirInactivos ? '?incluir_inactivos=true' : ''
+    return await apiFetch(`/proveedores/maestro/${query}`)
   },
   crear: async (datos) => {
     return await apiFetch('/proveedores/maestro/', {
@@ -17,9 +18,11 @@ export const proveedoresService = {
       body: JSON.stringify(datos),
     })
   },
-  eliminar: async (id) => {
-    return await apiFetch(`/proveedores/maestro/${id}`, {
-      method: 'DELETE',
+  // Dar de baja o reactivar un proveedor
+  cambiarEstado: async (id, activo) => {
+    return await apiFetch(`/proveedores/maestro/${id}/estado`, {
+      method: 'PATCH',
+      body: JSON.stringify({ activo }),
     })
   },
 
@@ -27,6 +30,9 @@ export const proveedoresService = {
   obtenerDeudas: async () => {
     const respuesta = await apiFetch('/proveedores/deudas/')
     return Array.isArray(respuesta) ? respuesta : respuesta.data || []
+  },
+  obtenerMovimientos: async (id) => {
+    return await apiFetch(`/proveedores/${id}/movimientos`)
   },
   registrarPago: async (datosPago) => {
     return await apiFetch('/proveedores/pagos/', {
