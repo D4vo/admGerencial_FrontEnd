@@ -197,6 +197,7 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue'
+import { fechaLocalHoy } from '../../utils/fecha'
 
 const props = defineProps({
   show: { type: Boolean, required: true },
@@ -324,6 +325,7 @@ const confirmarNota = () => {
     tipo_comprobante: tipoDocumentoFinal,
     motivo: formulario.value.motivo.trim(),
     total_modificado: totalModificado.value,
+    fecha: fechaLocalHoy(),
   }
 
   if (esCompra.value) {

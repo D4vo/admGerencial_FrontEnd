@@ -228,6 +228,7 @@
 <script setup>
 import { ref } from 'vue'
 import { documentosService } from '../../services/documentosService'
+import { formatearFechaLocal } from '../../utils/fecha'
 
 defineProps({
   documentos: { type: Array, required: true },
@@ -293,12 +294,7 @@ const badgeClass = (doc) => {
   }
 }
 
-const formatearFecha = (fechaString) => {
-  if (!fechaString) return ''
-  const fecha = new Date(fechaString)
-  fecha.setMinutes(fecha.getMinutes() + fecha.getTimezoneOffset())
-  return fecha.toLocaleDateString('es-AR')
-}
+const formatearFecha = formatearFechaLocal
 </script>
 
 <style scoped>

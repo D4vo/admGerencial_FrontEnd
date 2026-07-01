@@ -78,6 +78,7 @@
 
 <script setup>
 import { ref, watch, computed } from 'vue';
+import { fechaLocalHoy } from '../../utils/fecha';
 
 const props = defineProps({
   show: { type: Boolean, required: true },
@@ -131,7 +132,7 @@ const confirmarPago = () => {
   errorMonto.value = false;
 
   const payload = {
-    fecha: new Date().toISOString(),
+    fecha: fechaLocalHoy(),
     proveedor_id: props.deuda.id,
     monto_pagado: Number(form.value.monto_pagado),
     metodo_pago: form.value.metodo_pago,

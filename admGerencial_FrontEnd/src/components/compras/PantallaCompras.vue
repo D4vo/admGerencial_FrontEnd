@@ -43,6 +43,7 @@ import { ref, computed, inject, onMounted } from 'vue'
 import { productosService } from '../../services/productosService'
 import { proveedoresService } from '../../services/proveedoresService'
 import { comprasService } from '../../services/comprasService'
+import { fechaLocalHoy } from '../../utils/fecha'
 import FormularioItemCompra from './FormularioItemCompra.vue'
 import TablaDetalleCompra from './TablaDetalleCompra.vue'
 import PanelResumenCompra from './PanelResumenCompra.vue'
@@ -98,7 +99,7 @@ const enviarAlBackend = async (datosCabecera) => {
 
   // 2. Payload con los datos obligatorios que siempre viajan
   const payload = {
-    fecha: new Date().toISOString().split('T')[0],
+    fecha: fechaLocalHoy(),
     tipo_comprobante: datosCabecera.tipo_comprobante,
     nro_comprobante: datosCabecera.nro_comprobante,
     total: totalCompra.value,

@@ -30,15 +30,13 @@
 </template>
 
 <script setup>
+import { formatearFechaLocal } from '../../utils/fecha'
+
 defineProps({
   asiento: { type: Object, required: true }
 })
 
-const formatearFecha = (fechaString) => {
-  if (!fechaString) return ''
-  const d = new Date(fechaString)
-  return d.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' })
-}
+const formatearFecha = formatearFechaLocal
 
 const formatearHora = (fechaString) => {
   if (!fechaString) return ''

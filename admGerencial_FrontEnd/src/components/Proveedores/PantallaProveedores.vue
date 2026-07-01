@@ -171,6 +171,7 @@ import ModalExito from '../ModalesGenericos/ModalExito.vue'
 import ModalConfirmacion from '../ModalesGenericos/ModalConfirmacion.vue'
 import ModalFormProveedor from './ModalFormProveedor.vue'
 import { proveedoresService } from '../../services/proveedoresService'
+import { fechaLocalHoy, formatearFechaLocal } from '../../utils/fecha'
 
 const listaProveedores = ref([])
 const listaDeudas = ref([])
@@ -237,11 +238,7 @@ const cargarDatos = async () => {
 
 onMounted(cargarDatos)
 
-const formatearFecha = (fecha) => {
-  if (!fecha) return ''
-  const d = new Date(fecha)
-  return Number.isNaN(d.getTime()) ? fecha : d.toLocaleDateString('es-AR')
-}
+const formatearFecha = formatearFechaLocal
 
 const claseTipoMov = (tipo) => {
   if (tipo === 'Pago') return 'tipo-pago'
@@ -312,7 +309,7 @@ const abrirModalPago = (prov) => {
 
 const procesarPago = async (datosPago) => {
   try {
-    await proveedoresService.registrarPago({ ...datosPago, fecha: new Date().toISOString() })
+    await proveedoresService.registrarPago({ ...datosPago, fecha: fechaLocalHoy() })
     mostrarModalPago.value = false
     tituloExito.value = 'Pago Registrado'
     mensajeExito.value = 'El pago fue contabilizado y el saldo actualizado.'

@@ -40,6 +40,7 @@ import { ref } from 'vue';
 import PanelInicioActividades from './PanelInicioActividades.vue';
 import ModalExito from '../ModalesGenericos/ModalExito.vue';
 import { contabilidadService } from '../../services/contabilidadService'; // Importamos el servicio real
+import { fechaLocalHoy } from '../../utils/fecha';
 
 const cargando = ref(false);
 const mostrarModalExito = ref(false);
@@ -50,7 +51,7 @@ const procesarInicioActividades = async (saldos) => {
 
   // Armamos el payload con la fecha limpia (YYYY-MM-DD) y los montos correspondientes
   const payloadInicio = {
-    fecha: new Date().toISOString().split('T')[0],
+    fecha: fechaLocalHoy(),
     monto_caja: saldos.monto_caja,
     monto_banco: saldos.monto_banco
   };

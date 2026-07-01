@@ -172,6 +172,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { dashboardService } from '../../services/dashboardService'
+import { formatearFechaLocal } from '../../utils/fecha'
 
 const data = ref(null)
 const cargando = ref(true)
@@ -195,12 +196,7 @@ onMounted(cargar)
 
 const fmt = (v) => '$ ' + Number(v).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
-const formatFecha = (f) => {
-  if (!f) return ''
-  const d = new Date(f)
-  d.setMinutes(d.getMinutes() + d.getTimezoneOffset())
-  return d.toLocaleDateString('es-AR')
-}
+const formatFecha = formatearFechaLocal
 </script>
 
 <style scoped>

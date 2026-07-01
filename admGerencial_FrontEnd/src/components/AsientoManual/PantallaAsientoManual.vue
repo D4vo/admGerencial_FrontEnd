@@ -159,9 +159,10 @@ import { ref, computed, onMounted } from 'vue';
 import { cuentasService } from '../../services/cuentasService';
 import { contabilidadService } from '../../services/contabilidadService';
 import ModalExito from '../ModalesGenericos/ModalExito.vue';
+import { fechaLocalHoy } from '../../utils/fecha';
 
 // --- ESTADOS REACTIVOS PRINCIPALES ---
-const fecha = ref(new Date().toISOString().split('T')[0]);
+const fecha = ref(fechaLocalHoy());
 const descripcion = ref('');
 const planDeCuentas = ref([]);
 const cargando = ref(false);
@@ -278,7 +279,7 @@ const guardarAsiento = async () => {
     cargando.value = true;
     await contabilidadService.registrarAsientoManual(payload);
     
-    fecha.value = new Date().toISOString().split('T')[0];
+    fecha.value = fechaLocalHoy();
     descripcion.value = '';
     detalles.value = [generarFilaVacia(0), generarFilaVacia(1)];
     

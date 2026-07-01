@@ -97,6 +97,7 @@
 import { ref, computed, watch, nextTick } from 'vue'
 import FormDatosFiscales from './FormDatosFiscales.vue'
 import ModalSeleccionCliente from './ModalSeleccionCliente.vue'
+import { fechaLocalHoy } from '../../utils/fecha'
 
 const props = defineProps({
   show: { type: Boolean, required: true },
@@ -151,7 +152,7 @@ const puedeConfirmar = computed(() => {
 const confirmar = () => {
   if (!puedeConfirmar.value) return
   const payload = {
-    fecha: new Date().toISOString(),
+    fecha: fechaLocalHoy(),
     tipo_comprobante: tipoComprobante.value,
     metodoPago: metodoPago.value,
     montoRecibido: Number(montoRecibido.value),

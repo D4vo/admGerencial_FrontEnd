@@ -36,6 +36,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { proveedoresService } from '../../services/proveedoresService'; // <-- Servicio Corregido
+import { fechaLocalHoy } from '../../utils/fecha';
 import TablaDeudasProveedores from './TablaDeudasProveedores.vue';
 import ModalPagoProveedor from './ModalPagoProveedor.vue';
 import ModalExito from '../ModalesGenericos/ModalExito.vue';
@@ -88,7 +89,7 @@ const procesarPagoAPI = async (datosPagoForm) => {
   
   const payloadPago = {
     ...datosPagoForm, // Copia TODO lo que armó el modal (tipo_comprobante, nro, padre_id, etc.)
-    fecha: new Date().toISOString(), 
+    fecha: fechaLocalHoy(),
   };
 
   console.log("🚀 ENVIANDO ESTRUCTURA DE PAGO AL BACKEND:", JSON.stringify(payloadPago, null, 2));

@@ -263,11 +263,12 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { contabilidadService } from '../../services/contabilidadService'
+import { fechaLocalHoy } from '../../utils/fecha'
 
 const modo = ref('simple')
 
 // ===== SIMPLE =====
-const fechaCorte = ref(new Date().toISOString().split('T')[0])
+const fechaCorte = ref(fechaLocalHoy())
 const balance = ref(null)
 const cargando = ref(false)
 

@@ -162,6 +162,7 @@ import ModalFormProveedor from '../Proveedores/ModalFormProveedor.vue'
 import { gastosService } from '../../services/gastosService'
 import { cuentasService } from '../../services/cuentasService'
 import { proveedoresService } from '../../services/proveedoresService'
+import { fechaLocalHoy, formatearFechaLocal } from '../../utils/fecha'
 
 const tiposCuenta = ['Activo', 'Pasivo', 'Patrimonio Neto', 'Ingreso', 'Egreso']
 
@@ -174,7 +175,7 @@ const mostrarExito = ref(false)
 const mostrarModalProveedor = ref(false)
 
 const formInicial = () => ({
-  fecha: new Date().toISOString().split('T')[0],
+  fecha: fechaLocalHoy(),
   descripcion: '',
   cuenta_debe_id: null,
   monto: null,
@@ -260,11 +261,7 @@ const enviarGasto = async () => {
   }
 }
 
-const formatearFecha = (fecha) => {
-  if (!fecha) return ''
-  const d = new Date(fecha + 'T00:00:00')
-  return d.toLocaleDateString('es-AR')
-}
+const formatearFecha = formatearFechaLocal
 
 onMounted(cargarDatos)
 </script>

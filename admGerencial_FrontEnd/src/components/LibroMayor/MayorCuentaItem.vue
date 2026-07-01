@@ -52,6 +52,8 @@
 </template>
 
 <script setup>
+import { formatearFechaLocal } from '../../utils/fecha'
+
 defineProps({
   cuenta: {
     type: Object,
@@ -59,13 +61,7 @@ defineProps({
   }
 });
 
-const formatearFecha = (fechaString) => {
-  if (!fechaString) return '';
-  const fecha = new Date(fechaString);
-  // Ajuste para evitar desfase de zona horaria
-  fecha.setMinutes(fecha.getMinutes() + fecha.getTimezoneOffset());
-  return fecha.toLocaleDateString('es-AR');
-};
+const formatearFecha = formatearFechaLocal;
 </script>
 
 <style scoped>

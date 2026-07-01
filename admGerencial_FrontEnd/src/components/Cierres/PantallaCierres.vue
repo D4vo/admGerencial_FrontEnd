@@ -171,6 +171,7 @@
 import { ref, computed, onMounted } from 'vue'
 import ModalExito from '../ModalesGenericos/ModalExito.vue'
 import { cierresService } from '../../services/cierresService'
+import { formatearFechaLocal } from '../../utils/fecha'
 
 const cierres = ref([])
 const cargando = ref(true)
@@ -265,12 +266,7 @@ const formatPeriodo = (p) => {
   return `${meses[parseInt(m) - 1]} ${y}`
 }
 
-const formatFecha = (f) => {
-  if (!f) return ''
-  const d = new Date(f)
-  d.setMinutes(d.getMinutes() + d.getTimezoneOffset())
-  return d.toLocaleDateString('es-AR')
-}
+const formatFecha = formatearFechaLocal
 </script>
 
 <style scoped>
