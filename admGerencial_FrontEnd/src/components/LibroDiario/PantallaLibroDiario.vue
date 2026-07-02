@@ -5,6 +5,9 @@
         <h1>Libro Diario</h1>
         <p class="subtitulo">Registro cronológico de operaciones contables</p>
       </div>
+      <button class="btn-exportar" :disabled="exportando" @click="exportarExcel">
+        {{ exportando ? 'Generando...' : '⬇ Exportar Excel' }}
+      </button>
     </header>
 
     <!-- Filtros -->
@@ -49,6 +52,7 @@ const errorCarga = ref(null)
 const filtroPeriodo = ref('')
 const filtroDesde = ref('')
 const filtroHasta = ref('')
+const exportando = ref(false)
 
 const hayFiltros = computed(() => filtroPeriodo.value || filtroDesde.value || filtroHasta.value)
 
@@ -77,6 +81,22 @@ const limpiarFiltros = () => {
   cargarLibroDiario()
 }
 
+const exportarExcel = async () => {
+  try {
+    exportando.value = true
+    const filtros = {}
+    if (filtroPeriodo.value) filtros.periodo = filtroPeriodo.value
+    if (filtroDesde.value) filtros.fecha_desde = filtroDesde.value
+    if (filtroHasta.value) filtros.fecha_hasta = filtroHasta.value
+    await contabilidadService.descargarLibroDiarioExcel(filtros)
+  } catch (err) {
+    console.error('Error al exportar el Libro Diario:', err)
+    alert('No se pudo generar el Excel del Libro Diario.')
+  } finally {
+    exportando.value = false
+  }
+}
+
 onMounted(cargarLibroDiario)
 </script>
 
@@ -85,6 +105,10 @@ onMounted(cargarLibroDiario)
 .cabecera-modulo { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; }
 .cabecera-modulo h1 { margin: 0; font-size: 1.8rem; color: #0f172a; font-weight: 800; }
 .subtitulo { margin: 5px 0 0 0; color: #64748b; font-size: 0.95rem; }
+
+.btn-exportar { padding: 0.6rem 1.1rem; background: #10b981; color: #ffffff; border: none; border-radius: 8px; font-weight: 700; font-size: 0.85rem; cursor: pointer; box-shadow: 0 4px 6px -1px rgba(16,185,129,0.2); }
+.btn-exportar:hover:not(:disabled) { background: #059669; }
+.btn-exportar:disabled { background: #d1d5db; cursor: not-allowed; }
 
 .barra-filtros {
   display: flex; align-items: flex-end; gap: 0.85rem; margin-bottom: 1.5rem;

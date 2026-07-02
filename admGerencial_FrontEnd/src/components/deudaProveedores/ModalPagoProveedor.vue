@@ -169,10 +169,14 @@ const cerrarModal = () => {
 .modal-contenedor {
   background: #ffffff;
   border-radius: 12px;
-  width: 100%;
+  width: calc(100% - 2rem);
   max-width: 480px;
+  max-height: 90vh;
+  min-height: 0;
   box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
   border: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
 }
 .modal-header {
@@ -181,12 +185,21 @@ const cerrarModal = () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-shrink: 0;
 }
 .modal-header h3 { margin: 0; font-size: 1.15rem; color: #111827; font-weight: 600; }
 .btn-cerrar-X { background: none; border: none; font-size: 1.5rem; color: #9ca3af; cursor: pointer; }
 .btn-cerrar-X:hover { color: #374151; }
 
-.modal-cuerpo { padding: 1.5rem; display: flex; flex-direction: column; gap: 1.25rem; }
+.modal-cuerpo {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+}
 .info-proveedor {
   background: #f9fafb;
   padding: 1rem;
@@ -229,6 +242,7 @@ input:focus, select:focus, textarea:focus {
   display: flex;
   justify-content: flex-end;
   gap: 0.75rem;
+  flex-shrink: 0;
 }
 .btn-cancelar {
   background: white;

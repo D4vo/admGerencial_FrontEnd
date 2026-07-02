@@ -129,12 +129,12 @@ const cerrarModal = () => { emit('close'); };
 
 <style scoped>
 .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.5); z-index: 1000; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(4px); }
-.modal-contenedor { background: #ffffff; border-radius: 16px; width: 100%; max-width: 600px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.15); border: 1px solid #e2e8f0; overflow: hidden; }
-.modal-header { padding: 1.25rem 1.5rem; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; }
+.modal-contenedor { background: #ffffff; border-radius: 16px; width: calc(100% - 2rem); max-width: 600px; max-height: 90vh; min-height: 0; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.15); border: 1px solid #e2e8f0; display: flex; flex-direction: column; overflow: hidden; }
+.modal-header { padding: 1.25rem 1.5rem; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
 .modal-header h2 { margin: 0; font-size: 1.25rem; color: #0f172a; font-weight: 700; }
 .btn-cerrar-X { background: none; border: none; font-size: 1.5rem; color: #94a3b8; cursor: pointer; }
 .btn-cerrar-X:hover { color: #ef4444; }
-.modal-cuerpo { padding: 1.5rem; display: flex; flex-direction: column; gap: 1.25rem; }
+.modal-cuerpo { padding: 1.5rem; display: flex; flex-direction: column; gap: 1.25rem; overflow-y: auto; flex: 1; min-height: 0; }
 .grid-form { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
 .mt-1 { margin-top: 0.5rem; }
 .form-grupo { display: flex; flex-direction: column; }
@@ -145,7 +145,7 @@ input:focus, select:focus { border-color: #10b981; box-shadow: 0 0 0 3px rgba(16
 input:disabled { background-color: #f1f5f9; color: #64748b; cursor: not-allowed; }
 .error-borde { border-color: #ef4444 !important; background-color: #fef2f2 !important; }
 .msj-error { color: #ef4444; font-size: 0.75rem; margin-top: 0.25rem; font-weight: 500; }
-.modal-footer { padding: 1.25rem 1.5rem; background: #f8fafc; border-top: 1px solid #f1f5f9; display: flex; justify-content: flex-end; gap: 1rem; }
+.modal-footer { padding: 1.25rem 1.5rem; background: #f8fafc; border-top: 1px solid #f1f5f9; display: flex; justify-content: flex-end; gap: 1rem; flex-shrink: 0; }
 .btn-cancelar { background: white; border: 1px solid #cbd5e1; color: #475569; padding: 0.65rem 1.25rem; border-radius: 8px; font-weight: 600; cursor: pointer; }
 .btn-confirmar { background: #10b981; border: none; color: white; padding: 0.65rem 1.25rem; border-radius: 8px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
 .btn-confirmar:hover { background: #059669; }
